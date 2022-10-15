@@ -8,6 +8,7 @@
  *    
  *
  *****************************************************************/
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -156,6 +157,11 @@ int main(int argc, char *argv[])
 	args.arg2 = atoi(argv[3]) <= 500 & atoi(argv[3] ) >=50 ?  atoi(argv[3]) : 100 ;
 	
 
+	//set affinity mask to bound cpu0 to our threads
+	cpu_set_t set;
+	CPU_ZERO(&set);
+	CPU_SET(0, &set);
+	pthread_setaffinity_np(threadid, sizeof(set), &set);
 		
 	/* Create periodic thread/task */
 	err=pthread_create(&threadid, &attr, Thread_1_code, &args);
