@@ -44,6 +44,11 @@ void Heavy_Work(unsigned char FirstFlag);
 struct  timespec TsAdd(struct  timespec  ts1, struct  timespec  ts2);
 struct  timespec TsSub(struct  timespec  ts1, struct  timespec  ts2);
 
+// argument structure for thread1_code function
+struct arg_struct {
+    char procname[40];
+    int arg2;
+};
 
 /* *************************
 * Thread_1 code 
@@ -51,6 +56,7 @@ struct  timespec TsSub(struct  timespec  ts1, struct  timespec  ts2);
 
 void * Thread_1_code(void *arg)
 {
+	struct arg_struct *args = arg;
     /* Timespec variables to manage time */
 	struct timespec ts, // thread next activation time (absolute)
 			ta, 		// activation time of current thread activation (absolute)
@@ -64,7 +70,7 @@ void * Thread_1_code(void *arg)
 	int update; 	// Flag to signal that min/max should be updated
 	
 	/* Set absolute activation time of first instance */
-	tp.tv_nsec = PERIOD_NS;
+	tp.tv_nsec = args->arg2 * (1000 * 1000); //period inserted by user (ms to ns)
 	tp.tv_sec = PERIOD_S;	
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	ts = TsAdd(ts,tp);	
@@ -103,7 +109,7 @@ void * Thread_1_code(void *arg)
 		  
   		/* Print maximum/minimum inter-arrival time */
 		if(update) {
-		  printf("Task %s inter-arrival time (us): min: %10.3f / max: %10.3f \n\r",(char *) arg, (float)min_iat/1000, (float)max_iat/1000);
+		  printf("Task %s inter-arrival time (us): min: %10.3f / max: %10.3f \n\r", args->procname, (float)min_iat/1000, (float)max_iat/1000);
 		  update = 0;
 		}
 		
@@ -125,27 +131,34 @@ int main(int argc, char *argv[])
 {
 	int err;
 	pthread_t threadid;
+	//scheduler parms and initialization of attributes
 	pthread_attr_t attr;
 	struct sched_param parm;
 	pthread_attr_init(&attr); 
 	pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED); 
 	pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
-	parm.sched_priority = 85; 
-	pthread_attr_setschedparam(&attr, &parm);
-	
-	char procname[40]; 
-	
 
 	/* Process input args */
-	if(argc != 2) {
+	if(argc != 4) {
 	  printf("Usage: %s PROCNAME, where PROCNAME is a string\n\r", argv[0]);
+	  printf("Usage: %s PROCNAME, where PRIORITY is a int [1-99]\n\r", argv[0]);
+	  printf("Usage: %s PROCNAME, where PERIODICITY is a int [50-500]ms\n\r", argv[0]);
+		//sair do programa se os valores forem maiores ou menores? ou usar valores default
 	  return -1; 
 	}
+	//ccheck if priority > 1 and < 99, if not set default value 50
+	parm.sched_priority = atoi(argv[2]) <= 99 && atoi(argv[2]) >= 1 ?  atoi(argv[2]) : 50 ;
+	pthread_attr_setschedparam(&attr, &parm);
 	
-	strcpy(procname, argv[1]);
+	struct arg_struct args;
+	strcpy(args.procname, argv[1]);
+	//ccheck if periodicity > 50 and < 500, if not set default value 100ms
+	args.arg2 = atoi(argv[3]) <= 500 & atoi(argv[3] ) >=50 ?  atoi(argv[3]) : 100 ;
 	
+
+		
 	/* Create periodic thread/task */
-	err=pthread_create(&threadid, &attr, Thread_1_code, &procname);
+	err=pthread_create(&threadid, &attr, Thread_1_code, &args);
  	if(err != 0) {
 		printf("\n\r Error creating Thread [%s]", strerror(err));
 		return -1;
@@ -191,7 +204,7 @@ void Heavy_Work(unsigned char FirstFlag)
 	/* These values can be tunned to cause a desired load*/
 	lower=0;
 	upper=100;
-	subInterval=500000;
+	subInterval=650000;
 
 	 /* Calculation */
 	 /* Finding step size */
