@@ -157,14 +157,15 @@ int main(int argc, char *argv[])
 	args.arg2 = atoi(argv[3]) <= 500 & atoi(argv[3] ) >=50 ?  atoi(argv[3]) : 100 ;
 	
 
-	//set affinity mask to bound cpu0 to our threads
+	//set affinity mask to bound cpu0 to our threads (??)
 	cpu_set_t set;
 	CPU_ZERO(&set);
 	CPU_SET(0, &set);
-	pthread_setaffinity_np(threadid, sizeof(set), &set);
+	
 		
 	/* Create periodic thread/task */
 	err=pthread_create(&threadid, &attr, Thread_1_code, &args);
+	pthread_setaffinity_np(threadid, sizeof(set), &set);
  	if(err != 0) {
 		printf("\n\r Error creating Thread [%s]", strerror(err));
 		return -1;
