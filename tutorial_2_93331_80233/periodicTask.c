@@ -71,9 +71,7 @@ int main(int argc, char *argv[]) {
 			
 	/* Start RT task */
 	/* Args: task decriptor, address of function/implementation and argument*/
-	taskAArgs.taskPeriod_ns = TASK_A_PERIOD_NS;
-
-    rt_task_start(&task_b_desc, &task_code, (void *)&taskAArgs);
+	
     
 	err=rt_task_create(&task_b_desc, "Task B", TASK_STKSZ, 50,0 );
 	if(err) {
@@ -85,9 +83,7 @@ int main(int argc, char *argv[]) {
 			
 	/* Start RT task */
 	/* Args: task decriptor, address of function/implementation and argument*/
-	taskAArgs.taskPeriod_ns = TASK_A_PERIOD_NS;
-
-    rt_task_start(&task_c_desc, &task_code, (void *)&taskAArgs);
+	
     
 	err=rt_task_create(&task_c_desc, "Task C", TASK_STKSZ, 70, 0);
 	if(err) {
@@ -96,13 +92,19 @@ int main(int argc, char *argv[]) {
 	} else 
 		printf("Task C created successfully\n");
 	
-			
+	cpu_set_t set;
+	CPU_ZERO(&set);
+	CPU_SET(0, &set);
+
 	/* Start RT task */
 	/* Args: task decriptor, address of function/implementation and argument*/
 	taskAArgs.taskPeriod_ns = TASK_A_PERIOD_NS; 	
     rt_task_start(&task_a_desc, &task_code, (void *)&taskAArgs);
+    rt_task_set_affinity(&task_a_desc, &set);
     rt_task_start(&task_b_desc, &task_code, (void *)&taskAArgs);
+    rt_task_set_affinity(&task_b_desc, &set);
 	rt_task_start(&task_c_desc, &task_code, (void *)&taskAArgs);
+	rt_task_set_affinity(&task_c_desc, &set);
 	/* wait for termination signal */	
 	wait_for_ctrl_c();
 
