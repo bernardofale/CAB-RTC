@@ -139,7 +139,7 @@ void task_code(void *args) {
 			printf("task %s overrun!!!\n", curtaskinfo.name);
 			break;
 		}
-		printf("Task %s activation at time %llu\n", curtaskinfo.name,ta);
+		// printf("Task %s activation at time %llu\n", curtaskinfo.name,ta);
 		
 		/* Task "load" */
 		Heavy_Work();
@@ -147,7 +147,7 @@ void task_code(void *args) {
 		tf=rt_timer_read()-ta;
 		if(tf<min) min = tf;
 		if(tf>max) max = tf;
-		printf("Task %s - minimo : %llu , máximo : %llu \n", curtaskinfo.name,min,max);
+		printf("Task %s - minimo : %llu , máximo : %llu, tempo : %llu \n", curtaskinfo.name,min,max,tf);
 
 		
 	}
