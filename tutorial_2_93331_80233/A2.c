@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
 
 	/* Start RT task */
 	/* Args: task decriptor, address of function/implementation and argument*/
-	taskAArgs.taskPeriod_ns = TASK_A_PERIOD_NS; 	
+	taskAArgs.taskPeriod_ns = TASK_A_PERIOD_NS * 10; 	
     rt_task_start(&task_a_desc, &task_code, (void *)&taskAArgs);
     rt_task_set_affinity(&task_a_desc, &set);
     rt_task_start(&task_b_desc, &task_code, (void *)&taskAArgs);
