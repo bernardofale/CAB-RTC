@@ -38,8 +38,8 @@
 #define TASK_A_PERIOD_NS MS_2_NS(1000)
 
 RT_TASK task_a_desc; // Task decriptor
-
-
+RT_TASK task_b_desc;
+RT_TASK task_c_desc;
 /* *********************
 * Function prototypes
 * **********************/
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 	mlockall(MCL_CURRENT|MCL_FUTURE); 
 	/* Create RT task */
 	/* Args: descriptor, name, stack size, priority [0..99] and mode (flags for CPU, FPU, joinable ...) */
-	err=rt_task_create(&task_a_desc, "Task A", TASK_STKSZ, 30, 1);
+	err=rt_task_create(&task_a_desc, "Task A", TASK_STKSZ, 30, 0);
 	if(err) {
 		printf("Error creating task A (error code = %d)\n",err);
 		return err;
@@ -73,9 +73,9 @@ int main(int argc, char *argv[]) {
 	/* Args: task decriptor, address of function/implementation and argument*/
 	taskAArgs.taskPeriod_ns = TASK_A_PERIOD_NS;
 
-    rt_task_start(&task_a_desc, &task_code, (void *)&taskAArgs);
+    rt_task_start(&task_b_desc, &task_code, (void *)&taskAArgs);
     
-	err=rt_task_create(&task_a_desc, "Task B", TASK_STKSZ, 50, 1);
+	err=rt_task_create(&task_b_desc, "Task B", TASK_STKSZ, 50,0 );
 	if(err) {
 		printf("Error creating task B (error code = %d)\n",err);
 		return err;
@@ -87,9 +87,9 @@ int main(int argc, char *argv[]) {
 	/* Args: task decriptor, address of function/implementation and argument*/
 	taskAArgs.taskPeriod_ns = TASK_A_PERIOD_NS;
 
-    rt_task_start(&task_a_desc, &task_code, (void *)&taskAArgs);
+    rt_task_start(&task_c_desc, &task_code, (void *)&taskAArgs);
     
-	err=rt_task_create(&task_a_desc, "Task C", TASK_STKSZ, 70, 1);
+	err=rt_task_create(&task_c_desc, "Task C", TASK_STKSZ, 70, 0);
 	if(err) {
 		printf("Error creating task C (error code = %d)\n",err);
 		return err;
@@ -101,7 +101,8 @@ int main(int argc, char *argv[]) {
 	/* Args: task decriptor, address of function/implementation and argument*/
 	taskAArgs.taskPeriod_ns = TASK_A_PERIOD_NS; 	
     rt_task_start(&task_a_desc, &task_code, (void *)&taskAArgs);
-    
+    rt_task_start(&task_b_desc, &task_code, (void *)&taskAArgs);
+	rt_task_start(&task_c_desc, &task_code, (void *)&taskAArgs);
 	/* wait for termination signal */	
 	wait_for_ctrl_c();
 
