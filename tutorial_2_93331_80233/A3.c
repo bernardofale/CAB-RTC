@@ -67,7 +67,7 @@ void Heavy_Work(void);      	/* Load task */
 void sensor_task_code(void *args); 	/* Task body */
 void storage_task_code(void *args); 	/* Task body */
 void processing_task_code(void *args); 	/* Task body */
-int16_t* read_sensor(int16_t read_line); //read sensor from file, change macro file name if needed 
+char* read_sensor(int16_t read_line); //read sensor from file, change macro file name if needed 
 void write_output(void); //write filtered data in output file, change macro file name if needed
 
 
@@ -133,13 +133,14 @@ int main(int argc, char *argv[]) {
 	/* Args: task decriptor, address of function/implementation and argument*/
 	taskAArgs.taskPeriod_ns = ACK_PERIOD_MS; 	
     rt_task_start(&sensor_task_desc, &sensor_task_code, (void *)&taskAArgs);
-    //rt_task_set_affinity(&sensor_task_desc, &set);
+    rt_task_set_affinity(&sensor_task_desc, &set);
 
     //rt_task_start(&processing_task_desc, &processing_task_code, NULL);
-    //rt_task_set_affinity(&processing_task_desc, &set);
+    rt_task_set_affinity(&processing_task_desc, &set);
 	
 	//rt_task_start(&storage_task_desc, &storage_task_code, NULL);
-	//rt_task_set_affinity(&storage_task_desc, &set);
+	rt_task_set_affinity(&storage_task_desc, &set);
+	
 	/* wait for termination signal */	
 	wait_for_ctrl_c();
 
@@ -170,44 +171,30 @@ return;
 }
 void processing_task_code(void *args){
 	int err;
-	RT_TASK *curtask;
-	RT_TASK_INFO curtaskinfo;
-
-	curtask=rt_task_self();
-	rt_task_inquire(curtask,&curtaskinfo);
-	/* Bind to messague queues that are needed to exchange data between tasks*/
-	RT_QUEUE *sensor_queue;
-	RT_QUEUE *processing_queue;
 	RT_QUEUE_INFO sensor_queue_info;
 
-	//message = xnmalloc(5,2);
+	void* msg;
+	ssize_t len;
 
-	
-	
-	err = rt_queue_bind(sensor_queue, SENSOR_QUEUE, TM_INFINITE);
-	if(err) {
-			printf("Can't bind to sensor queue!!\n");
-		}
-
-	err = rt_queue_bind(processing_queue, PROCESSING_QUEUE, TM_INFINITE);
-	if(err) {
-			printf("Can't bind to processing queue!!\n");
-		}
-
-	for(;;) {
-		rt_queue_inquire(sensor_queue, &sensor_queue_info);
-		if(sensor_queue_info.nmessages == 5){
-			//rt_queue_read(sensor_queue, &message, 2, TM_INFINITE);
-		}
-		/* Task "load" */
-		Heavy_Work();
+	err = rt_queue_bind(&sensor_queue_desc, SENSOR_QUEUE, TM_INFINITE);
+	if(err){
+		printf("%s", "Error binding to queue");
 	}
+
+	while((len = rt_queue_receive(&sensor_queue_desc, &msg, TM_INFINITE)) > 0){
+		printf("%s", (const char*)msg);
+		printf("%s", "RECEIVED MESSAGE");
+		rt_queue_free(&sensor_queue_desc, msg);
+	}
+
+	rt_queue_unbind(&sensor_queue_desc);
 	return;
 
 }
 void sensor_task_code(void *args) {
 	RT_TASK *curtask;
 	RT_TASK_INFO curtaskinfo;
+	RT_QUEUE_INFO queueinfo;
 	struct taskArgsStruct *taskArgs;
 	unsigned long overruns;
 	int err;
@@ -219,10 +206,10 @@ void sensor_task_code(void *args) {
 	printf("Task %s init, period:%llu\n", curtaskinfo.name, taskArgs->taskPeriod_ns);
 
 	/* Message setup */
-	int16_t* msg;
+	char *msg;
 	int16_t line = 1; //first line to read, read next line in each exec of task
-	int16_t* data; //number returned by the sensor reading
-			
+	char *data; //number returned by the sensor reading
+	
 	/* Set task as periodic */
 	err=rt_task_set_periodic(NULL, TM_NOW, ACK_PERIOD_MS);
 	if(err){
@@ -236,19 +223,22 @@ void sensor_task_code(void *args) {
 			break;
 		}
 		data = read_sensor(line); //sensor reading
-		printf("%d\n", *data); //print value for debugging purposes
-		line++; //increment line each time the task executes
+		//allocate message buffer to prepare the queue
+		msg = rt_queue_alloc(&sensor_queue_desc, sizeof(data)); 
 
-		//allocate message buffer in the queue
-		msg = rt_queue_alloc(&sensor_queue_desc, sizeof(int16_t));
-		if(!msg){
-			break;
+		//copy contents of data to msg
+		strcpy(msg, data);	
+
+		//send message
+		err = rt_queue_send(&sensor_queue_desc, msg, sizeof(char*), Q_NORMAL);
+		if(err){
+			printf("%s", "Error sending message to queue\n");
 		}
-		msg = data;
-		//send the message and free the messague buffer immedietly after
-		rt_queue_send(&sensor_queue_desc, msg, sizeof(int16_t), Q_NORMAL);
-		rt_queue_free(&sensor_queue_desc, msg);
-		
+		rt_queue_inquire(&sensor_queue_desc, &queueinfo);
+		//check number of messages for debugging purposes
+		printf("%d", queueinfo.nmessages);
+		//rt_queue_free(&sensor_queue_desc, msg);
+		line++; //increment line each time the task executes
 	}
 	return;
 }
@@ -321,7 +311,7 @@ void Heavy_Work(void)
 
 }
 
-int16_t* read_sensor(int16_t read_line){
+char* read_sensor(int16_t read_line){
 
 	//create file and open
 	FILE *fp;
@@ -331,16 +321,14 @@ int16_t* read_sensor(int16_t read_line){
 		exit(1);
 	}
 
-	char line[16];
+	char *line;
+	line = malloc(sizeof(char) * 15);
 	int16_t i = 1;
-	int16_t number;
-	int16_t* n;
 	
 	while(fgets(line, sizeof(line), fp) != NULL){
 		if(read_line == i){
-			number = atoi(line);
-			n = &number;
-			return n;
+
+			return line;
 		}
 		i++;
 	}
