@@ -37,7 +37,7 @@
 #define TASK_MODE 0 	// No flags
 #define TASK_STKSZ 0 	// Default stack size
 
-#define ACK_PERIOD_MS MS_2_NS(2000)
+#define ACK_PERIOD_MS MS_2_NS(500)
 
 
 RT_TASK sensor_task_desc; // Task decriptor
@@ -126,17 +126,17 @@ int main(int argc, char *argv[]) {
 	the number of messages to 5, since we should only have 5 samples of 2 bytes each;
 
 	create filtered readings with 100 bytes poolsize with unlimited number of messages*/
-	rt_queue_create(&sensor_queue_desc, SENSOR_QUEUE, 500, Q_UNLIMITED, Q_FIFO); 
-	rt_queue_create(&processing_queue_desc, PROCESSING_QUEUE, 500, Q_UNLIMITED, Q_FIFO); 
+	rt_queue_create(&sensor_queue_desc, SENSOR_QUEUE, 800, Q_UNLIMITED, Q_FIFO); 
+	rt_queue_create(&processing_queue_desc, PROCESSING_QUEUE, 800, Q_UNLIMITED, Q_FIFO); 
 
 	/* Start RT task */
 	/* Args: task decriptor, address of function/implementation and argument*/
 	taskAArgs.taskPeriod_ns = ACK_PERIOD_MS; 	
     rt_task_start(&sensor_task_desc, &sensor_task_code, (void *)&taskAArgs);
-    rt_task_set_affinity(&sensor_task_desc, &set);
+    //rt_task_set_affinity(&sensor_task_desc, &set);
 
-    //rt_task_start(&processing_task_desc, &processing_task_code, NULL);
-    rt_task_set_affinity(&processing_task_desc, &set);
+    rt_task_start(&processing_task_desc, &processing_task_code, NULL);
+    //rt_task_set_affinity(&processing_task_desc, &set);
 	
 	//rt_task_start(&storage_task_desc, &storage_task_code, NULL);
 	rt_task_set_affinity(&storage_task_desc, &set);
@@ -182,8 +182,7 @@ void processing_task_code(void *args){
 	}
 
 	while((len = rt_queue_receive(&sensor_queue_desc, &msg, TM_INFINITE)) > 0){
-		printf("%s", (const char*)msg);
-		printf("%s", "RECEIVED MESSAGE");
+		printf("%s -> %s\n", "RECEIVED MESSAGE", msg);
 		rt_queue_free(&sensor_queue_desc, msg);
 	}
 
@@ -206,14 +205,15 @@ void sensor_task_code(void *args) {
 	printf("Task %s init, period:%llu\n", curtaskinfo.name, taskArgs->taskPeriod_ns);
 
 	/* Message setup */
-	char *msg;
+	void *msg;
 	int16_t line = 1; //first line to read, read next line in each exec of task
 	char *data; //number returned by the sensor reading
+	int length;
 	
 	/* Set task as periodic */
 	err=rt_task_set_periodic(NULL, TM_NOW, ACK_PERIOD_MS);
 	if(err){
-		printf("error on set periodic.");
+		printf("Error on set periodic.");
 	}
 
 	for(;;) {
@@ -223,22 +223,25 @@ void sensor_task_code(void *args) {
 			break;
 		}
 		data = read_sensor(line); //sensor reading
+		length = strlen(data) + 1;
 		//allocate message buffer to prepare the queue
-		msg = rt_queue_alloc(&sensor_queue_desc, sizeof(data)); 
-
+		msg = rt_queue_alloc(&sensor_queue_desc, length); 
+		if(!msg){
+			printf("No memory available");
+			break;
+		}
 		//copy contents of data to msg
 		strcpy(msg, data);	
-
+		printf("msg -> %s\n",msg);
 		//send message
-		err = rt_queue_send(&sensor_queue_desc, msg, sizeof(char*), Q_NORMAL);
+		err = rt_queue_send(&sensor_queue_desc, msg, length, Q_NORMAL);
+		rt_queue_free(&sensor_queue_desc, msg);
 		if(err){
-			printf("%s", "Error sending message to queue\n");
+			//printf("%s", "Error sending message to queue\n");
 		}
-		rt_queue_inquire(&sensor_queue_desc, &queueinfo);
-		//check number of messages for debugging purposes
-		printf("%d", queueinfo.nmessages);
-		//rt_queue_free(&sensor_queue_desc, msg);
+		
 		line++; //increment line each time the task executes
+		
 	}
 	return;
 }
