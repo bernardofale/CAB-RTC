@@ -322,16 +322,20 @@ void Heavy_Work(void)
 }
 
 int16_t* read_sensor(int16_t read_line){
+
+	//create file and open
 	FILE *fp;
 	fp = fopen("sensordata.txt", "r");
 	if (fp == NULL){
 		perror("Unable to open file.");
 		exit(1);
 	}
+
 	char line[16];
 	int16_t i = 1;
 	int16_t number;
 	int16_t* n;
+	
 	while(fgets(line, sizeof(line), fp) != NULL){
 		if(read_line == i){
 			number = atoi(line);
@@ -341,7 +345,7 @@ int16_t* read_sensor(int16_t read_line){
 		i++;
 	}
 	fclose(fp);
-	return n;
+	return 0;
 }
 
 
