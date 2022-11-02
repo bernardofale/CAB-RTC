@@ -169,6 +169,10 @@ void storage_task_code(void *args){
 }
 return;
 }
+
+
+int buffer[5];
+int index_buffer=0;
 void processing_task_code(void *args){
 	int err;
 	RT_QUEUE_INFO sensor_queue_info;
@@ -182,10 +186,27 @@ void processing_task_code(void *args){
 	}
 
 	while((len = rt_queue_receive(&sensor_queue_desc, &msg, TM_INFINITE)) > 0){
-		printf("%s -> %s\n", "RECEIVED MESSAGE", msg);
+		printf("%s -> %s\n", "RECEIVED MESSAGE", (char *)msg);
+		buffer[index_buffer%5] = atoi((char *)msg);
+		// printf("%s -> %d\n", "AVERAGE", index_buffer);
+		index_buffer++;
+
 		rt_queue_free(&sensor_queue_desc, msg);
+		if(index_buffer>3){
+			int sum = 0;
+				for (int i = 0; i < 5; i++){
+					sum+=buffer[i];
+					printf("%s-%d -> %d\n", "VALUE",i, buffer[i]);
+
+				}
+			
+			float avg=(float)sum/5;
+			printf("%s -> %.3f\n", "AVERAGE", avg);
+
+		}
 	}
 
+		
 	rt_queue_unbind(&sensor_queue_desc);
 	return;
 
@@ -232,10 +253,10 @@ void sensor_task_code(void *args) {
 		}
 		//copy contents of data to msg
 		strcpy(msg, data);	
-		printf("msg -> %s\n",msg);
+		printf("msg -> %s\n",(char *)msg);
 		//send message
 		err = rt_queue_send(&sensor_queue_desc, msg, length, Q_NORMAL);
-		rt_queue_free(&sensor_queue_desc, msg);
+		rt_queue_free(&sensor_queue_desc, (char *)msg);
 		if(err){
 			//printf("%s", "Error sending message to queue\n");
 		}
