@@ -23,6 +23,7 @@
 
 #define MS_2_NS(ms)(ms*1000*1000) /* Convert ms to ns */
 
+
 /* *****************************************************
  * Define task structure for setting input arguments
  * *****************************************************/
@@ -37,7 +38,7 @@
 #define TASK_MODE 0 	// No flags
 #define TASK_STKSZ 0 	// Default stack size
 
-#define ACK_PERIOD_MS MS_2_NS(500)
+#define ACK_PERIOD_MS MS_2_NS(10)
 
 
 RT_TASK sensor_task_desc; // Task decriptor
@@ -56,7 +57,7 @@ RT_QUEUE processing_queue_desc;
  * File attributes 
  * *******************/ 
 #define READ_FILENAME "sensordata.txt"
-#define WRITE_FILENAME "output.txt"
+#define WRITE_FILENAME "sensordataFiltered.txt"
 
 /* *********************
 * Function prototypes
@@ -64,11 +65,13 @@ RT_QUEUE processing_queue_desc;
 void catch_signal(int sig); 	/* Catches CTRL + C to allow a controlled termination of the application */
 void wait_for_ctrl_c(void);
 void Heavy_Work(void);      	/* Load task */
+
 void sensor_task_code(void *args); 	/* Task body */
 void storage_task_code(void *args); 	/* Task body */
 void processing_task_code(void *args); 	/* Task body */
-char* read_sensor(int16_t read_line); //read sensor from file, change macro file name if needed 
-void write_output(void); //write filtered data in output file, change macro file name if needed
+char* read_sensor(int16_t read_line); /* read sensor from file, change macro file name if needed */
+void write_output(uint16_t value); /* write filtered data in output file, change macro file name if needed */
+uint16_t* filter(uint16_t *arr); /* create the point moving average and filter the sensor readings */
 
 
 
@@ -135,11 +138,13 @@ int main(int argc, char *argv[]) {
     rt_task_start(&sensor_task_desc, &sensor_task_code, (void *)&taskAArgs);
     //rt_task_set_affinity(&sensor_task_desc, &set);
 
+    /* Should sporadic tasks be always executing or should they start in sensor task function?
+       Should they be bounded to one CPU? */
     rt_task_start(&processing_task_desc, &processing_task_code, NULL);
     //rt_task_set_affinity(&processing_task_desc, &set);
 	
-	//rt_task_start(&storage_task_desc, &storage_task_code, NULL);
-	rt_task_set_affinity(&storage_task_desc, &set);
+	rt_task_start(&storage_task_desc, &storage_task_code, NULL);
+	//rt_task_set_affinity(&storage_task_desc, &set);
 	
 	/* wait for termination signal */	
 	wait_for_ctrl_c();
@@ -152,61 +157,83 @@ int main(int argc, char *argv[]) {
 * Task body implementation
 * *************************************/
 void storage_task_code(void *args){
-	RT_TASK *curtask;
-	RT_TASK_INFO curtaskinfo;
-	struct taskArgsStruct *taskArgs;
-
-	curtask=rt_task_self();
-	rt_task_inquire(curtask,&curtaskinfo);
-	taskArgs=(struct taskArgsStruct *)args;
-	printf("Task %s init, period:%llu\n", curtaskinfo.name, taskArgs->taskPeriod_ns);
-
 	
-	for(;;) {
-		
-		/* Task "load" */
-		Heavy_Work();
-}
-return;
+	int err;
+
+	/* Variable declarations for filter*/
+	void* msg;
+	ssize_t len;
+	
+	/* Bind to queue, receive message from the processing task and free the message buffer;
+	   Write to file */
+	
+	err = rt_queue_bind(&processing_queue_desc, PROCESSING_QUEUE, TM_INFINITE);
+	if(err){
+		printf("%s", "Error binding to queue");
+	}
+
+	/* Wait for message and free the message buffer*/
+	while((len = rt_queue_receive(&processing_queue_desc, &msg, TM_INFINITE)) > 0){
+		uint16_t *val = (uint16_t*) msg;
+		rt_queue_free(&processing_queue_desc, msg);
+		printf("%s -> %d\n", "STORAGE RECEIVED MESSAGE FROM PROCESSING", *val);
+		write_output(*val);
+	}
+	
+	rt_queue_unbind(&processing_queue_desc);
+	return;
 }
 
+#define N_SAMPLES 5 //Number of samples for moving average filter, change if needed
 
-int buffer[5];
-int index_buffer=0;
 void processing_task_code(void *args){
 	int err;
 	RT_QUEUE_INFO sensor_queue_info;
 
+	/* Variable declarations for filter*/
+	uint16_t buffer[N_SAMPLES];
+	int index_buffer=0;
 	void* msg;
+	uint16_t* storage_msg;
 	ssize_t len;
+	uint16_t* average;
 
+	/* Bind to sensor queue to receive message */
 	err = rt_queue_bind(&sensor_queue_desc, SENSOR_QUEUE, TM_INFINITE);
 	if(err){
 		printf("%s", "Error binding to queue");
 	}
 
+	/* Wait for message from sensor readings task */
 	while((len = rt_queue_receive(&sensor_queue_desc, &msg, TM_INFINITE)) > 0){
-		printf("%s -> %s\n", "RECEIVED MESSAGE", (char *)msg);
-		buffer[index_buffer%5] = atoi((char *)msg);
-		// printf("%s -> %d\n", "AVERAGE", index_buffer);
+		printf("%s -> %s\n", "PROCESSING RECEIVED MESSAGE FROM SENSOR", (char *)msg);
+		buffer[index_buffer%N_SAMPLES] = atoi((char *)msg);
 		index_buffer++;
 
 		rt_queue_free(&sensor_queue_desc, msg);
-		if(index_buffer>3){
-			int sum = 0;
-				for (int i = 0; i < 5; i++){
-					sum+=buffer[i];
-					printf("%s-%d -> %d\n", "VALUE",i, buffer[i]);
-
-				}
+		/* Get value from filter function so if other filter is applied we don't need to change in here */
+		if(index_buffer > N_SAMPLES-1){
+			average = filter(buffer);
+			//printf("%s -> %d\n", "AVERAGE", *average);
 			
-			float avg=(float)sum/5;
-			printf("%s -> %.3f\n", "AVERAGE", avg);
-
-		}
-	}
-
-		
+			/* Prepare memory to send message to storage */
+			storage_msg = rt_queue_alloc(&processing_queue_desc, sizeof(uint16_t*)); 
+			if(!storage_msg){
+				printf("No memory available");
+				break;
+			}
+			/* Copy contents of average to message and send to the processing queue, so it can be retrieved by
+			   the storage task*/
+			*storage_msg = *average;
+			printf("PROCESSING SEND MESSAGE TO STORAGE-> %d\n", *storage_msg);
+			err = rt_queue_send(&processing_queue_desc, storage_msg, sizeof(storage_msg), Q_NORMAL);
+			if(err){
+				//printf("%s", "Error sending message to storage\n");
+			}
+			
+			rt_queue_free(&processing_queue_desc, (uint16_t *)msg);
+			}
+		}	
 	rt_queue_unbind(&sensor_queue_desc);
 	return;
 
@@ -243,23 +270,23 @@ void sensor_task_code(void *args) {
 			printf("task %s overrun!!!\n", curtaskinfo.name);
 			break;
 		}
-		data = read_sensor(line); //sensor reading
+		/* Get value from the read_sensor() function and calculate its length for allocation purposes*/
+		data = read_sensor(line); 
 		length = strlen(data) + 1;
-		//allocate message buffer to prepare the queue
+		
+		/* Allocate message buffer to prepare the queue */
 		msg = rt_queue_alloc(&sensor_queue_desc, length); 
 		if(!msg){
 			printf("No memory available");
 			break;
 		}
-		//copy contents of data to msg
+		/* Copy contents of data to msg */
 		strcpy(msg, data);	
-		printf("msg -> %s\n",(char *)msg);
-		//send message
+		printf("SEND MESSAGE TO PROCESSING-> %s\n",(char *)msg);
+		
+		/* Send message and free the queue message buffer */
 		err = rt_queue_send(&sensor_queue_desc, msg, length, Q_NORMAL);
 		rt_queue_free(&sensor_queue_desc, (char *)msg);
-		if(err){
-			//printf("%s", "Error sending message to queue\n");
-		}
 		
 		line++; //increment line each time the task executes
 		
@@ -339,7 +366,7 @@ char* read_sensor(int16_t read_line){
 
 	//create file and open
 	FILE *fp;
-	fp = fopen("sensordata.txt", "r");
+	fp = fopen(READ_FILENAME, "r");
 	if (fp == NULL){
 		perror("Unable to open file.");
 		exit(1);
@@ -351,13 +378,40 @@ char* read_sensor(int16_t read_line){
 	
 	while(fgets(line, sizeof(line), fp) != NULL){
 		if(read_line == i){
-
 			return line;
 		}
 		i++;
 	}
 	fclose(fp);
-	return 0;
+	printf("%s", "No more readings!\n******************\nCLOSING PROGRAM\n******************\n");
+	_Exit(0);
+	return "EXIT";
+}
+
+uint16_t* filter(uint16_t *arr){
+	uint16_t *average;
+	int sum = 0;
+	for (int i = 0; i < N_SAMPLES; i++){
+		sum+=arr[i];
+
+	}
+
+	uint16_t avg=(uint16_t)sum/N_SAMPLES;
+	average = &avg;
+
+	return average;
+}
+
+void write_output(uint16_t value){
+
+	FILE *fp;
+	fp = fopen(WRITE_FILENAME, "a");
+	if (fp == NULL){
+		perror("Unable to open file.");
+		exit(1);
+	}
+	fprintf(fp,"%u\n", value);
+	fclose(fp);
 }
 
 
