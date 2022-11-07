@@ -35,7 +35,7 @@
 #define TASK_STKSZ 0 	// Default stack size
 
 #define TASK_A_PRIO 25 	// RT priority [0..99]
-#define TASK_A_PERIOD_NS MS_2_NS(1000)
+#define TASK_A_PERIOD_NS MS_2_NS(500)
 
 RT_TASK task_a_desc; // Task decriptor
 RT_TASK task_b_desc;
@@ -55,6 +55,8 @@ void task_code(void *args); 	/* Task body */
 int main(int argc, char *argv[]) {
 	int err; 
 	struct taskArgsStruct taskAArgs;
+	struct taskArgsStruct taskBArgs;
+	struct taskArgsStruct taskCArgs;
 	
 	/* Lock memory to prevent paging */
 	mlockall(MCL_CURRENT|MCL_FUTURE); 
@@ -98,12 +100,16 @@ int main(int argc, char *argv[]) {
 
 	/* Start RT task */
 	/* Args: task decriptor, address of function/implementation and argument*/
-	taskAArgs.taskPeriod_ns = TASK_A_PERIOD_NS * 10; 	
+	taskAArgs.taskPeriod_ns = TASK_A_PERIOD_NS; 	
     rt_task_start(&task_a_desc, &task_code, (void *)&taskAArgs);
     rt_task_set_affinity(&task_a_desc, &set);
-    rt_task_start(&task_b_desc, &task_code, (void *)&taskAArgs);
+	
+	taskBArgs.taskPeriod_ns = TASK_A_PERIOD_NS + (1000*1000); 	
+    rt_task_start(&task_b_desc, &task_code, (void *)&taskBArgs);
     rt_task_set_affinity(&task_b_desc, &set);
-	rt_task_start(&task_c_desc, &task_code, (void *)&taskAArgs);
+	
+	taskCArgs.taskPeriod_ns = TASK_A_PERIOD_NS + (1000*1000*2); 	
+	rt_task_start(&task_c_desc, &task_code, (void *)&taskCArgs);
 	rt_task_set_affinity(&task_c_desc, &set);
 	/* wait for termination signal */	
 	wait_for_ctrl_c();
@@ -120,7 +126,7 @@ void task_code(void *args) {
 	RT_TASK_INFO curtaskinfo;
 	struct taskArgsStruct *taskArgs;
 
-	RTIME ta=0,tf=0,min=INFINITY,max=0;
+	RTIME ta=0,tf=0,min=(RTIME)INFINITY,max=0;
 	unsigned long overruns;
 	int err;
 	
