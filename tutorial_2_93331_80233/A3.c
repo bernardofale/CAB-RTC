@@ -286,12 +286,12 @@ void sensor_task_code(void *args) {
 	}
 
 	for(;;) {
-		ta=rt_timer_read();
 		err=rt_task_wait_period(&overruns);
 		if(err) {
 			printf("task %s overrun!!!\n", curtaskinfo.name);
 			break;
 		}
+		ta=rt_timer_read();
 		/* Get value from the read_sensor() function and calculate its length for allocation purposes*/
 		data = read_sensor(line); 
 		length = strlen(data) + 1;
