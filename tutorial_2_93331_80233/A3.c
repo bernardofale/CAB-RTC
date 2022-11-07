@@ -38,7 +38,7 @@
 #define TASK_MODE 0 	// No flags
 #define TASK_STKSZ 0 	// Default stack size
 
-#define ACK_PERIOD_MS MS_2_NS(10)
+#define ACK_PERIOD_MS MS_2_NS(150)
 
 
 RT_TASK sensor_task_desc; // Task decriptor
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
 	/* Args: task decriptor, address of function/implementation and argument*/
 	
     
-	err=rt_task_create(&storage_task_desc, "Task C", TASK_STKSZ, 50, 0);
+	err=rt_task_create(&storage_task_desc, "Storing", TASK_STKSZ, 50, 0);
 	if(err) {
 		printf("Error creating task Storage (error code = %d)\n",err);
 		return err;
@@ -159,7 +159,11 @@ int main(int argc, char *argv[]) {
 void storage_task_code(void *args){
 	
 	int err;
-
+	RTIME ta=0,tf=0,min=(RTIME)INFINITY,max=0;
+	RT_TASK *curtask;
+	RT_TASK_INFO curtaskinfo;
+	curtask=rt_task_self();
+	rt_task_inquire(curtask,&curtaskinfo);
 	/* Variable declarations for filter*/
 	void* msg;
 	ssize_t len;
@@ -174,13 +178,19 @@ void storage_task_code(void *args){
 
 	/* Wait for message and free the message buffer*/
 	while((len = rt_queue_receive(&processing_queue_desc, &msg, TM_INFINITE)) > 0){
+		ta=rt_timer_read();
 		uint16_t *val = (uint16_t*) msg;
 		rt_queue_free(&processing_queue_desc, msg);
 		printf("%s -> %d\n", "STORAGE RECEIVED MESSAGE FROM PROCESSING", *val);
 		write_output(*val);
+		tf=rt_timer_read()-ta;
+		if(tf<min) min = tf;
+		if(tf>max) max = tf;
+		printf("Task %s - minimo : %llu , máximo : %llu, tempo : %llu \n", curtaskinfo.name,min,max,tf);
 	}
 	
 	rt_queue_unbind(&processing_queue_desc);
+
 	return;
 }
 
@@ -189,7 +199,11 @@ void storage_task_code(void *args){
 void processing_task_code(void *args){
 	int err;
 	RT_QUEUE_INFO sensor_queue_info;
-
+	RTIME ta=0,tf=0,min=(RTIME)INFINITY,max=0;
+	RT_TASK *curtask;
+	RT_TASK_INFO curtaskinfo;
+	curtask=rt_task_self();
+	rt_task_inquire(curtask,&curtaskinfo);
 	/* Variable declarations for filter*/
 	uint16_t buffer[N_SAMPLES];
 	int index_buffer=0;
@@ -206,6 +220,7 @@ void processing_task_code(void *args){
 
 	/* Wait for message from sensor readings task */
 	while((len = rt_queue_receive(&sensor_queue_desc, &msg, TM_INFINITE)) > 0){
+		ta=rt_timer_read();
 		printf("%s -> %s\n", "PROCESSING RECEIVED MESSAGE FROM SENSOR", (char *)msg);
 		buffer[index_buffer%N_SAMPLES] = atoi((char *)msg);
 		index_buffer++;
@@ -232,13 +247,19 @@ void processing_task_code(void *args){
 			}
 			
 			rt_queue_free(&processing_queue_desc, (uint16_t *)msg);
+			tf=rt_timer_read()-ta;
+			if(tf<min) min = tf;
+			if(tf>max) max = tf;
+			printf("Task %s - minimo : %llu , máximo : %llu, tempo : %llu \n", curtaskinfo.name,min,max,tf);
 			}
+
 		}	
 	rt_queue_unbind(&sensor_queue_desc);
 	return;
 
 }
 void sensor_task_code(void *args) {
+	RTIME ta=0,tf=0,min=(RTIME)INFINITY,max=0;
 	RT_TASK *curtask;
 	RT_TASK_INFO curtaskinfo;
 	RT_QUEUE_INFO queueinfo;
@@ -265,6 +286,7 @@ void sensor_task_code(void *args) {
 	}
 
 	for(;;) {
+		ta=rt_timer_read();
 		err=rt_task_wait_period(&overruns);
 		if(err) {
 			printf("task %s overrun!!!\n", curtaskinfo.name);
@@ -289,7 +311,10 @@ void sensor_task_code(void *args) {
 		rt_queue_free(&sensor_queue_desc, (char *)msg);
 		
 		line++; //increment line each time the task executes
-		
+		tf=rt_timer_read()-ta;
+		if(tf<min) min = tf;
+		if(tf>max) max = tf;
+		printf("Task %s - minimo : %llu , máximo : %llu, tempo : %llu \n", curtaskinfo.name,min,max,tf);
 	}
 	return;
 }
