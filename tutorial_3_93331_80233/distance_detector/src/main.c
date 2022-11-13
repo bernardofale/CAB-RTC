@@ -95,14 +95,45 @@ static const struct gpio_dt_spec led3 = GPIO_DT_SPEC_GET(LED2_NODE, gpios);
 static const struct gpio_dt_spec led4 = GPIO_DT_SPEC_GET(LED3_NODE, gpios);
 
 /* Interrupt definitions */
-#define MY_DEV_IRQ  24	/* device uses IRQ 24 */
-#define MY_DEV_PRIO  2	/* device uses interrupt priority 2 */ 
-#define MY_ISR_ARG  DEVICE_GET(DT_NODELABEL(nvic))
-#define MY_IRQ_FLAG IRQ_ZERO_LATENCY       /* IRQ flags */
+#define BUTTON_NODE DT_NODELABEL(button0)
+
+static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(BUTTON_NODE, gpios);
+static struct gpio_callback cb_data;
 
 /* Static Variables */
 static uint16_t adc_sample_buffer[BUFFER_SIZE];
 static uint16_t distance;
+
+/* Interrupt Handler */
+
+gpio_callback_handler_t button_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
+	int err;
+	uint16_t start = k_uptime_get();
+	uint16_t end = start + 5000; //blink 5 seconds
+
+	while(k_uptime_get() <= end){
+		if(k_uptime_get() % 250 == 0){
+			printk("BLINK\n");
+			err = gpio_pin_toggle_dt(&led1);
+			if (err < 0) {
+				return;
+			}
+			err = gpio_pin_toggle_dt(&led2);
+			if (err < 0) {
+				return;
+			}
+			err = gpio_pin_toggle_dt(&led3);
+			if (err < 0) {
+				return;
+			}
+			err = gpio_pin_toggle_dt(&led4);
+			if (err < 0) {
+				return;
+			}
+		}
+	}
+	return;
+}
 
 /* Takes ten sample */
 static int adc_sample(void)
@@ -134,8 +165,24 @@ void main(void)
 	int arg1=0, arg2=0, arg3=0; // Input args of tasks (actually not used in this case)
 	int err;
 
+	/* Interrupt configure */
+	if (!device_is_ready(button.port)) {
+		printk("Error: button device %s is not ready\n",
+		       button.port->name);
+		return;
+	}
+	err = gpio_pin_configure_dt(&button, GPIO_INPUT);
+	if (err < 0) {
+		return;
+	}
+	err = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_RISING);
+	if (err < 0) {
+		return;
+	}
+	 gpio_init_callback(&cb_data, button_pressed, BIT(button.pin));
+	 gpio_add_callback(button.port, &cb_data);
+
 	/* Check if devices are ready */
-	
 	if (!device_is_ready(led1.port)) {
 		return;
 	}
@@ -202,27 +249,27 @@ void thread_SENSOR_code(void *argA , void *argB, void *argC)
     int err;
 	/* Thread loop */
     while(1) {
-		printk("Thread SENSOR released\n");
-        /* It is recommended to calibrate the SAADC at least once before use, and whenever the ambient temperature has changed by more than 10 °C */
-    	NRF_SAADC->TASKS_CALIBRATEOFFSET = 1;
+			printk("Thread SENSOR released\n");
+			/* It is recommended to calibrate the SAADC at least once before use, and whenever the ambient temperature has changed by more than 10 °C */
+			NRF_SAADC->TASKS_CALIBRATEOFFSET = 1;
 
-		/* Gets all samples, checks for errors and prints the values */
-        err=adc_sample();
-        if(err) {
-            printk("adc_sample() failed with error code %d\n\r",err);
-        }
-		k_sem_give(&sem_sensor_filter); //ready to be taken, count increases (unless it's not max)
-
-        /* Periodicity of task */
-        k_msleep(SAMP_PERIOD_MS);
-        
+			/* Gets all samples, checks for errors and prints the values */
+			err=adc_sample();
+			if(err) {
+				printk("adc_sample() failed with error code %d\n\r",err);
+			}
+			k_sem_give(&sem_sensor_filter); //ready to be taken, count increases (unless it's not max)
+			
+			/* Periodicity of task */
+			k_msleep(SAMP_PERIOD_MS);
+		}   
     }
-}
 
 void thread_FILTER_code(void *argA , void *argB, void *argC)
 {	
     while(1) {
-        k_sem_take(&sem_sensor_filter,  K_FOREVER); //takes the sensor semaphore to compute something with shared memory
+
+		k_sem_take(&sem_sensor_filter,  K_FOREVER); //takes the sensor semaphore to compute something with shared memory
 		printk("Thread FILTER released\n");
 		for(int i = 0; i < BUFFER_SIZE; i++){
 				if(adc_sample_buffer[i] > 1023) {
@@ -244,6 +291,7 @@ void thread_OUTPUT_code(void *argA , void *argB, void *argC)
 	int ret;
 
     while(1) {
+
 		k_sem_take(&sem_filter_output, K_FOREVER); //takes the semaphore given by the filter task
 		printk("Thread OUTPUT released\n");
 		printk("Distance after filter ->%4u m \n", distance);
