@@ -26,7 +26,7 @@
 #define thread_OUTPUT_prio 1
 
 /* Thread periodicity (in ms)*/
-#define SAMP_PERIOD_MS 1000
+#define SAMP_PERIOD_MS 3000
 
 
 /* Create thread stack space */
@@ -133,6 +133,40 @@ void main(void)
 {
 	int arg1=0, arg2=0, arg3=0; // Input args of tasks (actually not used in this case)
 	int err;
+
+	/* Check if devices are ready */
+	
+	if (!device_is_ready(led1.port)) {
+		return;
+	}
+	if (!device_is_ready(led2.port)) {
+		return;
+	}
+	if (!device_is_ready(led3.port)) {
+		return;
+	}
+	if (!device_is_ready(led4.port)) {
+		return;
+	}
+
+	/* Configure the GPIO pin for output */
+	err = gpio_pin_configure_dt(&led1, GPIO_OUTPUT_ACTIVE);
+	if (err < 0) {
+		return;
+	}
+	err = gpio_pin_configure_dt(&led2, GPIO_OUTPUT_ACTIVE);
+	if (err < 0) {
+		return;
+	}
+	err = gpio_pin_configure_dt(&led3, GPIO_OUTPUT_ACTIVE);
+	if (err < 0) {
+		return;
+	}
+	err = gpio_pin_configure_dt(&led4, GPIO_OUTPUT_ACTIVE);
+	if (err < 0) {
+		return;
+	}
+
 	/* ADC setup: bind and initialize */
     adc_dev = device_get_binding(DT_LABEL(ADC_NODE));
 	if (!adc_dev) {
@@ -208,38 +242,6 @@ void thread_FILTER_code(void *argA , void *argB, void *argC)
 void thread_OUTPUT_code(void *argA , void *argB, void *argC)
 {	
 	int ret;
-
-	/* Check if devices are ready */
-	if (!device_is_ready(led1.port)) {
-		return;
-	}
-	if (!device_is_ready(led2.port)) {
-		return;
-	}
-	if (!device_is_ready(led3.port)) {
-		return;
-	}
-	if (!device_is_ready(led4.port)) {
-		return;
-	}
-
-	/* Configure the GPIO pin for output */
-	ret = gpio_pin_configure_dt(&led1, GPIO_OUTPUT_ACTIVE);
-	if (ret < 0) {
-		return;
-	}
-	ret = gpio_pin_configure_dt(&led2, GPIO_OUTPUT_ACTIVE);
-	if (ret < 0) {
-		return;
-	}
-	ret = gpio_pin_configure_dt(&led3, GPIO_OUTPUT_ACTIVE);
-	if (ret < 0) {
-		return;
-	}
-	ret = gpio_pin_configure_dt(&led4, GPIO_OUTPUT_ACTIVE);
-	if (ret < 0) {
-		return;
-	}
 
     while(1) {
 		k_sem_take(&sem_filter_output, K_FOREVER); //takes the semaphore given by the filter task
