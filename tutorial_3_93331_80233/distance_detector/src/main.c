@@ -108,11 +108,10 @@ static uint16_t distance;
 
 gpio_callback_handler_t button_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
 	int err;
-	uint16_t start = k_uptime_get();
-	uint16_t end = start + 5000; //blink 5 seconds
+	uint16_t end =  k_uptime_get() + 5000; //blink 5 seconds
 
 	while(k_uptime_get() <= end){
-		if(k_uptime_get() % 250 == 0){
+		if(k_uptime_get() % 500 == 0){
 			printk("BLINK\n");
 			err = gpio_pin_toggle_dt(&led1);
 			if (err < 0) {
@@ -171,11 +170,11 @@ void main(void)
 		       button.port->name);
 		return;
 	}
-	err = gpio_pin_configure_dt(&button, GPIO_INPUT);
+	err = gpio_pin_configure_dt(&button, GPIO_INPUT | GPIO_INT_DEBOUNCE );
 	if (err < 0) {
 		return;
 	}
-	err = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_RISING);
+	err = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_TO_ACTIVE);
 	if (err < 0) {
 		return;
 	}
@@ -278,7 +277,7 @@ void thread_FILTER_code(void *argA , void *argB, void *argC)
 				}
 				else {
 					/* ADC is set to use gain of 1/4 and reference VDD/4, so input range is 0...VDD (3 V), with 10 bit resolution */
-					printk("Sensor :%4u m \n\r", (uint16_t)(100*adc_sample_buffer[i]*((float)3/1023)));
+					printk("Sensor :%4u m \n\r", (uint16_t)(10*adc_sample_buffer[i]*((float)3/1023)));
 				}
 			}
 		filter(adc_sample_buffer);
@@ -375,7 +374,7 @@ void filter(uint16_t *arr){
 	uint16_t sum = 0;
 	uint16_t v;
 	for (int i = 0; i < N_SAMPLES; i++){
-		v = (uint16_t)(100*arr[i]*((float)3/1023));
+		v = (uint16_t)(10*arr[i]*((float)3/1023));
 		if(v != 0){
 			sum += v;
 		}
