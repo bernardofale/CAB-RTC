@@ -80,7 +80,7 @@ static const struct adc_sequence_options my_sequence_options = {
     .interval_us = ADC_ACQUISITION_TIME,
     .callback = NULL,
     .user_data = NULL,
-    .extra_samplings = N_SAMPLES - 1 /* N_SAMPLES = 1 + EXTRA_SAMPLES */
+    .extra_samplings = N_SAMPLES /* N_SAMPLES = 1 + EXTRA_SAMPLES | should be n_samples - 1 but first reading out of bounds */
 };
 
 /* GPIO definitions */
@@ -101,7 +101,7 @@ static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(BUTTON_NODE, gpios);
 static struct gpio_callback cb_data;
 
 /* Static Variables */
-static uint16_t adc_sample_buffer[BUFFER_SIZE];
+static uint16_t adc_sample_buffer[BUFFER_SIZE + 1];
 static uint16_t distance;
 
 /* Interrupt Handler */
@@ -270,14 +270,15 @@ void thread_FILTER_code(void *argA , void *argB, void *argC)
 
 		k_sem_take(&sem_sensor_filter,  K_FOREVER); //takes the sensor semaphore to compute something with shared memory
 		printk("Thread FILTER released\n");
-		for(int i = 0; i < BUFFER_SIZE; i++){
+		for(int i = 1; i < BUFFER_SIZE + 1; i++){
 				if(adc_sample_buffer[i] > 1023) {
+					printk("Sensor reading %d out of range: %d\n\r", i+1, (uint16_t)adc_sample_buffer[i]);
 					adc_sample_buffer[i] = 0;
-					printk("Sensor reading %d out of range\n\r", i+1);
+					
 				}
 				else {
 					/* ADC is set to use gain of 1/4 and reference VDD/4, so input range is 0...VDD (3 V), with 10 bit resolution */
-					printk("Sensor :%4u m \n\r", (uint16_t)(10*adc_sample_buffer[i]*((float)3/1023)));
+					printk("Sensor %d :%4u m \n\r", i, (uint16_t)(10*adc_sample_buffer[i]*((float)3/1023)));
 				}
 			}
 		filter(adc_sample_buffer);
@@ -373,7 +374,7 @@ void thread_OUTPUT_code(void *argA , void *argB, void *argC)
 void filter(uint16_t *arr){
 	uint16_t sum = 0;
 	uint16_t v;
-	for (int i = 0; i < N_SAMPLES; i++){
+	for (int i = 1; i < N_SAMPLES + 1; i++){
 		v = (uint16_t)(10*arr[i]*((float)3/1023));
 		if(v != 0){
 			sum += v;
