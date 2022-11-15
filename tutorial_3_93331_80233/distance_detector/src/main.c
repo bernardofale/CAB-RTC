@@ -26,7 +26,7 @@
 #define thread_OUTPUT_prio 1
 
 /* Thread periodicity (in ms)*/
-#define SAMP_PERIOD_MS 3000
+#define SAMP_PERIOD_MS 500
 
 
 /* Create thread stack space */
@@ -65,7 +65,7 @@ struct k_sem sem_filter_output;
 #define BUFFER_SIZE 10
 #define ADC_NODE DT_NODELABEL(adc)  
 const struct device *adc_dev = NULL;
-#define N_SAMPLES 10 /* N_SAMPLES = 1 + EXTRA_SAMPLES */
+#define N_SAMPLES 10 /* N_SAMPLES = 1 + EXTRA_SAMPLES | should be n_samples - 1 but first reading out of bounds */
 
 /* ADC channel configuration */
 static const struct adc_channel_cfg my_channel_cfg = {
@@ -134,10 +134,11 @@ gpio_callback_handler_t button_pressed(const struct device *dev, struct gpio_cal
 	return;
 }
 
-/* Takes ten sample */
+/* Takes ten samples */
 static int adc_sample(void)
 {
 	int ret;
+	/* Create sequence with options gonfigured previously */
 	const struct adc_sequence sequence = {
 		.options = &my_sequence_options,
 		.channels = BIT(ADC_CHANNEL_ID),
@@ -150,7 +151,7 @@ static int adc_sample(void)
             printk("adc_sample(): error, must bind to adc first \n\r");
             return -1;
 	}
-
+	/* Reads the samples */
 	ret = adc_read(adc_dev, &sequence);
 	if (ret) {
             printk("adc_read() failed with code %d\n", ret);
@@ -164,7 +165,7 @@ void main(void)
 	int arg1=0, arg2=0, arg3=0; // Input args of tasks (actually not used in this case)
 	int err;
 
-	/* Interrupt configure */
+	/* Interrupt configure and adding callbacks */
 	if (!device_is_ready(button.port)) {
 		printk("Error: button device %s is not ready\n",
 		       button.port->name);
@@ -195,7 +196,7 @@ void main(void)
 		return;
 	}
 
-	/* Configure the GPIO pin for output */
+	/* Configure the GPIO pins for output */
 	err = gpio_pin_configure_dt(&led1, GPIO_OUTPUT_ACTIVE);
 	if (err < 0) {
 		return;
@@ -227,6 +228,7 @@ void main(void)
     k_sem_init(&sem_sensor_filter, 0, 1);
     k_sem_init(&sem_filter_output, 0, 1);
 
+	/* Creation of tasks */
     thread_SENSOR_tid = k_thread_create(&thread_SENSOR_data, thread_SENSOR_stack,
         K_THREAD_STACK_SIZEOF(thread_SENSOR_stack), thread_SENSOR_code,
         &arg1, &arg2, &arg3, thread_SENSOR_prio, 0, K_NO_WAIT);
@@ -246,19 +248,26 @@ void main(void)
 void thread_SENSOR_code(void *argA , void *argB, void *argC)
 {
     int err;
+	uint16_t start;
+	uint16_t end;
+	uint16_t wc_exec_time = 10000;
 	/* Thread loop */
     while(1) {
+			start = k_uptime_get(); /* start calculating exec times */
 			printk("Thread SENSOR released\n");
 			/* It is recommended to calibrate the SAADC at least once before use, and whenever the ambient temperature has changed by more than 10 °C */
 			NRF_SAADC->TASKS_CALIBRATEOFFSET = 1;
 
-			/* Gets all samples, checks for errors and prints the values */
+			/* Gets all samples */
 			err=adc_sample();
 			if(err) {
 				printk("adc_sample() failed with error code %d\n\r",err);
 			}
-			k_sem_give(&sem_sensor_filter); //ready to be taken, count increases (unless it's not max)
 			
+			k_sem_give(&sem_sensor_filter); //ready to be taken the processing task, count increases (unless it's not max)
+			end = k_uptime_get();
+			if(wc_exec_time > (end-start)) wc_exec_time = (end - start);
+			printk("Ci : %4u\n", wc_exec_time);
 			/* Periodicity of task */
 			k_msleep(SAMP_PERIOD_MS);
 		}   
@@ -266,9 +275,16 @@ void thread_SENSOR_code(void *argA , void *argB, void *argC)
 
 void thread_FILTER_code(void *argA , void *argB, void *argC)
 {	
+	uint16_t start;
+	uint16_t end;
+	uint16_t wc_exec_time = 10000;
+	uint16_t last = 5000; 
+	uint16_t min_iat = 10000;
+	
     while(1) {
 
-		k_sem_take(&sem_sensor_filter,  K_FOREVER); //takes the sensor semaphore to compute something with shared memory
+		k_sem_take(&sem_sensor_filter,  K_FOREVER); /* takes the sensor semaphore to compute something with the shared memory */
+		start = k_uptime_get(); /* start calculating exec times */
 		printk("Thread FILTER released\n");
 		for(int i = 1; i < BUFFER_SIZE + 1; i++){
 				if(adc_sample_buffer[i] > 1023) {
@@ -281,18 +297,31 @@ void thread_FILTER_code(void *argA , void *argB, void *argC)
 					printk("Sensor %d :%4u m \n\r", i, (uint16_t)(10*adc_sample_buffer[i]*((float)3/1023)));
 				}
 			}
+		/* Computes filtering */
 		filter(adc_sample_buffer);
-		k_sem_give(&sem_filter_output); //ready to be taken, count increases (unless it's not max)
+		k_sem_give(&sem_filter_output); //ready to be taken by the output task, count increases (unless it's not max)
+		end = k_uptime_get();
+		
+		if(wc_exec_time > (end-start)) wc_exec_time = (end - start);
+		if(min_iat > last) min_iat = start - last;
+		last = end;
+		printk("Ci : %4u\n", wc_exec_time);
+		printk("MIN_IAT : %4u\n", min_iat);
   	}
 }
 
 void thread_OUTPUT_code(void *argA , void *argB, void *argC)
 {	
 	int ret;
-
+	uint16_t start;
+	uint16_t end;
+	uint16_t wc_exec_time = 1000;
+	uint16_t last = 5000;
+	uint16_t min_iat = 100000;
     while(1) {
 
 		k_sem_take(&sem_filter_output, K_FOREVER); //takes the semaphore given by the filter task
+		start = k_uptime_get();
 		printk("Thread OUTPUT released\n");
 		printk("Distance after filter ->%4u m \n", distance);
 		if(distance >= 30){
@@ -368,6 +397,13 @@ void thread_OUTPUT_code(void *argA , void *argB, void *argC)
 				return;
 			}
 		}
+		end = k_uptime_get();
+		if(wc_exec_time > (end-start)) wc_exec_time = (end - start);
+		if(min_iat > last) min_iat = start - last;
+		last = end;
+		printk("Ci : %4u\n", wc_exec_time);
+		printk("MIN_IAT : %4u", min_iat);
+		
   	}
 }
 
