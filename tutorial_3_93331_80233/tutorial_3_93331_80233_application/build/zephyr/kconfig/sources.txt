@@ -1,6 +1,6 @@
-/Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/Kconfig/Kconfig.modules
-/Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/Kconfig/Kconfig.shield
-/Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/Kconfig/Kconfig.shield.defconfig
+/Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/Kconfig/Kconfig.modules
+/Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/Kconfig/Kconfig.shield
+/Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/Kconfig/Kconfig.shield.defconfig
 /Users/bernardofalle/ncs/modules/debug/TraceRecorder/config/Kconfig
 /Users/bernardofalle/ncs/modules/debug/TraceRecorder/kernelports/Zephyr/Kconfig
 /Users/bernardofalle/ncs/modules/debug/TraceRecorder/streamports/ARM_ITM/Kconfig
@@ -322,7 +322,6 @@
 /Users/bernardofalle/ncs/zephyr/boards/shields/x_nucleo_iks02a1/Kconfig.defconfig
 /Users/bernardofalle/ncs/zephyr/boards/shields/x_nucleo_iks02a1/Kconfig.shield
 /Users/bernardofalle/ncs/zephyr/boards/shields/x_nucleo_iks02a1/boards/nucleo_f411re.defconfig
-/Users/bernardofalle/ncs/zephyr/cmake/toolchain/gnuarmemb/Kconfig
 /Users/bernardofalle/ncs/zephyr/drivers/Kconfig
 /Users/bernardofalle/ncs/zephyr/drivers/adc/Kconfig
 /Users/bernardofalle/ncs/zephyr/drivers/adc/Kconfig.adc_emul
@@ -1794,3 +1793,4 @@
 /Users/bernardofalle/ncs/zephyr/subsys/usb/device/class/dfu/Kconfig
 /Users/bernardofalle/ncs/zephyr/subsys/usb/device/class/hid/Kconfig
 /Users/bernardofalle/ncs/zephyr/subsys/usb/device/class/netusb/Kconfig
+/Users/bernardofalle/zephyr-sdk-0.15.1/cmake/zephyr/Kconfig

@@ -80,7 +80,7 @@ static const struct adc_sequence_options my_sequence_options = {
     .interval_us = ADC_ACQUISITION_TIME,
     .callback = NULL,
     .user_data = NULL,
-    .extra_samplings = N_SAMPLES /* N_SAMPLES = 1 + EXTRA_SAMPLES | should be n_samples - 1 but first reading out of bounds */
+    .extra_samplings = N_SAMPLES - 1 /* N_SAMPLES = 1 + EXTRA_SAMPLES | should be n_samples - 1 but first reading out of bounds */
 };
 
 /* GPIO definitions */
@@ -94,43 +94,22 @@ static const struct gpio_dt_spec led2 = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
 static const struct gpio_dt_spec led3 = GPIO_DT_SPEC_GET(LED2_NODE, gpios);
 static const struct gpio_dt_spec led4 = GPIO_DT_SPEC_GET(LED3_NODE, gpios);
 
-/* Interrupt definitions */
+/* Test button definitions */
 #define BUTTON_NODE DT_NODELABEL(button0)
 
 static const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(BUTTON_NODE, gpios);
 static struct gpio_callback cb_data;
+static bool test_flag = false;
+struct k_timer my_timer;
 
 /* Static Variables */
-static uint16_t adc_sample_buffer[BUFFER_SIZE + 1];
+static uint16_t adc_sample_buffer[BUFFER_SIZE];
 static uint16_t distance;
 
 /* Interrupt Handler */
 
 gpio_callback_handler_t button_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins){
-	int err;
-	uint16_t end =  k_uptime_get() + 5000; //blink 5 seconds
-
-	while(k_uptime_get() <= end){
-		if(k_uptime_get() % 500 == 0){
-			printk("BLINK\n");
-			err = gpio_pin_toggle_dt(&led1);
-			if (err < 0) {
-				return;
-			}
-			err = gpio_pin_toggle_dt(&led2);
-			if (err < 0) {
-				return;
-			}
-			err = gpio_pin_toggle_dt(&led3);
-			if (err < 0) {
-				return;
-			}
-			err = gpio_pin_toggle_dt(&led4);
-			if (err < 0) {
-				return;
-			}
-		}
-	}
+	test_flag = true;
 	return;
 }
 
@@ -181,6 +160,9 @@ void main(void)
 	}
 	 gpio_init_callback(&cb_data, button_pressed, BIT(button.pin));
 	 gpio_add_callback(button.port, &cb_data);
+
+	/* Define timer for test functionality */
+	k_timer_init(&my_timer, NULL, NULL);
 
 	/* Check if devices are ready */
 	if (!device_is_ready(led1.port)) {
@@ -253,25 +235,51 @@ void thread_SENSOR_code(void *argA , void *argB, void *argC)
 	uint16_t wc_exec_time = 10000;
 	/* Thread loop */
     while(1) {
-			start = k_uptime_get(); /* start calculating exec times */
-			printk("Thread SENSOR released\n");
-			/* It is recommended to calibrate the SAADC at least once before use, and whenever the ambient temperature has changed by more than 10 °C */
-			NRF_SAADC->TASKS_CALIBRATEOFFSET = 1;
-
-			/* Gets all samples */
-			err=adc_sample();
-			if(err) {
-				printk("adc_sample() failed with error code %d\n\r",err);
+		if(test_flag){
+			k_timer_start(&my_timer, K_MSEC(5000), K_NO_WAIT);
+			while(k_timer_status_get(&my_timer) <= 0){
+				if(k_uptime_get() % 500 == 0){
+					printk("BLINK\n");
+					err = gpio_pin_toggle_dt(&led1);
+					if (err < 0) {
+						return;
+					}
+					err = gpio_pin_toggle_dt(&led2);
+					if (err < 0) {
+						return;
+					}
+					err = gpio_pin_toggle_dt(&led3);
+					if (err < 0) {
+						return;
+					}
+					err = gpio_pin_toggle_dt(&led4);
+					if (err < 0) {
+						return;
+					}
+				}
 			}
-			
-			k_sem_give(&sem_sensor_filter); //ready to be taken the processing task, count increases (unless it's not max)
-			end = k_uptime_get();
-			if(wc_exec_time > (end-start)) wc_exec_time = (end - start);
-			printk("Ci : %4u\n", wc_exec_time);
-			/* Periodicity of task */
-			k_msleep(SAMP_PERIOD_MS);
-		}   
-    }
+			test_flag = 0;
+		}else{
+		start = k_uptime_get(); /* start calculating exec times */
+		printk("Thread SENSOR released\n");
+		/* It is recommended to calibrate the SAADC at least once before use, and whenever the ambient temperature has changed by more than 10 °C */
+		NRF_SAADC->TASKS_CALIBRATEOFFSET = 1;
+
+		/* Gets all samples */
+		err=adc_sample();
+		if(err) {
+			printk("adc_sample() failed with error code %d\n\r",err);
+		}
+		
+		k_sem_give(&sem_sensor_filter); //ready to be taken the processing task, count increases (unless it's not max)
+		end = k_uptime_get();
+		if(wc_exec_time > (end-start)) wc_exec_time = (end - start);
+		printk("Ci : %4u\n", wc_exec_time);
+		/* Periodicity of task */
+		k_msleep(SAMP_PERIOD_MS);
+		}  
+	} 
+}
 
 void thread_FILTER_code(void *argA , void *argB, void *argC)
 {	
@@ -286,7 +294,7 @@ void thread_FILTER_code(void *argA , void *argB, void *argC)
 		k_sem_take(&sem_sensor_filter,  K_FOREVER); /* takes the sensor semaphore to compute something with the shared memory */
 		start = k_uptime_get(); /* start calculating exec times */
 		printk("Thread FILTER released\n");
-		for(int i = 1; i < BUFFER_SIZE + 1; i++){
+		for(int i = 1; i < BUFFER_SIZE ; i++){
 				if(adc_sample_buffer[i] > 1023) {
 					printk("Sensor reading %d out of range: %d\n\r", i+1, (uint16_t)adc_sample_buffer[i]);
 					adc_sample_buffer[i] = 0;
@@ -402,7 +410,7 @@ void thread_OUTPUT_code(void *argA , void *argB, void *argC)
 		if(min_iat > last) min_iat = start - last;
 		last = end;
 		printk("Ci : %4u\n", wc_exec_time);
-		printk("MIN_IAT : %4u", min_iat);
+		printk("MIN_IAT : %4u\n", min_iat);
 		
   	}
 }

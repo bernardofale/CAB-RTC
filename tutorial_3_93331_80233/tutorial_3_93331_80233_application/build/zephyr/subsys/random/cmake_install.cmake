@@ -34,6 +34,6 @@ endif()
 
 # Set default install directory permissions.
 if(NOT DEFINED CMAKE_OBJDUMP)
-  set(CMAKE_OBJDUMP "/usr/local/bin/arm-none-eabi-objdump")
+  set(CMAKE_OBJDUMP "/Users/bernardofalle/zephyr-sdk-0.15.1/arm-zephyr-eabi/bin/arm-zephyr-eabi-objdump")
 endif()
 

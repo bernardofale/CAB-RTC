@@ -1,14 +1,14 @@
 linker_zephyr_pre0.cmd: \
  /Users/bernardofalle/ncs/zephyr/soc/arm/nordic_nrf/nrf52/linker.ld \
- /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/zephyr/include/generated/autoconf.h \
+ /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/zephyr/include/generated/autoconf.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/arch/arm/aarch32/cortex_m/scripts/linker.ld \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/sections.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/section_tags.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/toolchain.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/toolchain/gcc.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/devicetree.h \
- /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/zephyr/include/generated/devicetree_unfixed.h \
- /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/zephyr/include/generated/devicetree_fixups.h \
+ /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/zephyr/include/generated/devicetree_unfixed.h \
+ /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/zephyr/include/generated/devicetree_fixups.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/sys/util.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/sys/util_macro.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/sys/util_internal.h \
@@ -30,13 +30,13 @@ linker_zephyr_pre0.cmd: \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/devicetree_regions.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/linker-defs.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/toolchain/common.h \
- /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/zephyr/include/generated/offsets.h \
+ /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/zephyr/include/generated/offsets.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/devicetree_reserved.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/linker-tool.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/linker-tool-gcc.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/sys/mem_manage.h \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/rel-sections.ld \
- /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/zephyr/include/generated/snippets-rom-start.ld \
+ /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/zephyr/include/generated/snippets-rom-start.ld \
  /Users/bernardofalle/ncs/zephyr/include/../arch/common/rom_start_offset.ld \
  /Users/bernardofalle/ncs/zephyr/include/../arch/arm/core/aarch32/vector_table.ld \
  /Users/bernardofalle/ncs/zephyr/include/../arch/arm/core/aarch32/cortex_m/vector_table_pad.ld \
@@ -44,18 +44,18 @@ linker_zephyr_pre0.cmd: \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/common-rom.ld \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/device-handles.ld \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/thread-local-storage.ld \
- /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/zephyr/include/generated/snippets-rodata.ld \
+ /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/zephyr/include/generated/snippets-rodata.ld \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/kobject-rom.ld \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/cplusplus-rom.ld \
- /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/zephyr/include/generated/snippets-ram-sections.ld \
+ /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/zephyr/include/generated/snippets-ram-sections.ld \
  /Users/bernardofalle/ncs/zephyr/include/../arch/common/ramfunc.ld \
- /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/zephyr/include/generated/snippets-ramfunc-section.ld \
- /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/zephyr/include/generated/snippets-rwdata.ld \
+ /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/zephyr/include/generated/snippets-ramfunc-section.ld \
+ /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/zephyr/include/generated/snippets-rwdata.ld \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/common-ram.ld \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/kobject-data.ld \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/cplusplus-ram.ld \
- /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/zephyr/include/generated/snippets-data-sections.ld \
- /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/zephyr/include/generated/snippets-noinit.ld \
- /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/distance_detector/build/zephyr/include/generated/snippets-sections.ld \
+ /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/zephyr/include/generated/snippets-data-sections.ld \
+ /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/zephyr/include/generated/snippets-noinit.ld \
+ /Users/bernardofalle/Documents/SOTR/tutorial_3_93331_80233/tutorial_3_93331_80233_application/build/zephyr/include/generated/snippets-sections.ld \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/intlist.ld \
  /Users/bernardofalle/ncs/zephyr/include/zephyr/linker/debug-sections.ld
