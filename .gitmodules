@@ -1,0 +1,3 @@
+[submodule "mcu_app"]
+	path = mcu_app
+	url = git@github.com:bernardofalle/SOTR.git
