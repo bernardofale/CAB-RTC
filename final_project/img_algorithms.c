@@ -10,8 +10,10 @@
 #define BACKGROUND_COLOR 0x00 /* Color of the background (BLACK) */
 #define GUIDELINE_COLOR 0xFF  /* Guideline color (WHITE) */
 #define OBSTACLE_COLOR 0x80 /* Obstacle color (GRAY) */
-#define GF 0	/* Row to look for the guide line - close */
-#define GN IMGHEIGHT	/* Row to look for the guide line - far */
+/* Row to look for the guide line - FAR (Remember that that this is the top edge of the image, 
+thus it is on the first line of the array) */
+#define GF 0	
+#define GN IMGHEIGHT	/* Row to look for the guide line - NEAR */
 #define CSA_LEFT IMGWIDTH/4	/* Col to look for near obstacles */
 #define CSA_RIGHT IMGWIDTH * 3/4
 #define CSA_FRONT (IMGHEIGHT/2) - 1
@@ -35,7 +37,7 @@ uint8_t buffer[IMGHEIGHT][IMGWIDTH]=
 		{0x00, 0x00, 0x80, 0x80, 0x80, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00},					
 		{0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00} 
 	};
-
+/* Tops to bottom (in to r) and left to right (jn to r) */
 static uint16_t count_obstacles(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH], uint16_t r, uint16_t c, uint16_t in, uint16_t jn){
     /* Number of obstacles */
     uint16_t obs = 0; 

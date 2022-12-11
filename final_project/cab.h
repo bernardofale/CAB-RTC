@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #define N_TASKS 3
 
 struct cab;
@@ -16,6 +17,7 @@ typedef struct cab {
     uint16_t flags[N_TASKS]; /* Flags to identify which buffers are in use*/
     uint16_t* head; /* Most recent buffer */
     uint16_t c;
+    pthread_mutex_t mutex;
 
 } cab;
 

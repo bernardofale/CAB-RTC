@@ -3,6 +3,8 @@
         "stdint.h": "c",
         "typeinfo": "cpp",
         "stdio.h": "c",
-        "atomic": "c"
-    }
+        "atomic": "c",
+        "string.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }
