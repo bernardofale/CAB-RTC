@@ -1,0 +1,120 @@
+menu "nrf (/Users/bernardofalle/ncs/nrf)"
+osource "/Users/bernardofalle/ncs/nrf/Kconfig.nrf"
+config ZEPHYR_NRF_MODULE
+	bool
+	default y
+endmenu
+menu "mcuboot (/Users/bernardofalle/ncs/bootloader/mcuboot)"
+osource "$(ZEPHYR_MCUBOOT_KCONFIG)"
+config ZEPHYR_MCUBOOT_MODULE
+	bool
+	default y
+endmenu
+menu "mbedtls (/Users/bernardofalle/ncs/modules/crypto/mbedtls)"
+osource "$(ZEPHYR_MBEDTLS_KCONFIG)"
+config ZEPHYR_MBEDTLS_MODULE
+	bool
+	default y
+endmenu
+menu "trusted-firmware-m (/Users/bernardofalle/ncs/modules/tee/tf-m/trusted-firmware-m)"
+osource "$(ZEPHYR_TRUSTED_FIRMWARE_M_KCONFIG)"
+config ZEPHYR_TRUSTED_FIRMWARE_M_MODULE
+	bool
+	default y
+endmenu
+menu "cjson (/Users/bernardofalle/ncs/modules/lib/cjson)"
+osource "$(ZEPHYR_CJSON_KCONFIG)"
+config ZEPHYR_CJSON_MODULE
+	bool
+	default y
+endmenu
+menu "zcbor (/Users/bernardofalle/ncs/modules/lib/zcbor)"
+osource "$(ZEPHYR_ZCBOR_KCONFIG)"
+config ZEPHYR_ZCBOR_MODULE
+	bool
+	default y
+endmenu
+menu "memfault-firmware-sdk (/Users/bernardofalle/ncs/modules/lib/memfault-firmware-sdk)"
+osource "/Users/bernardofalle/ncs/modules/lib/memfault-firmware-sdk/ports/zephyr/Kconfig"
+config ZEPHYR_MEMFAULT_FIRMWARE_SDK_MODULE
+	bool
+	default y
+endmenu
+menu "canopennode (/Users/bernardofalle/ncs/modules/lib/canopennode)"
+osource "$(ZEPHYR_CANOPENNODE_KCONFIG)"
+config ZEPHYR_CANOPENNODE_MODULE
+	bool
+	default y
+endmenu
+menu "chre (/Users/bernardofalle/ncs/modules/lib/chre)"
+osource "/Users/bernardofalle/ncs/modules/lib/chre/platform/zephyr/Kconfig"
+config ZEPHYR_CHRE_MODULE
+	bool
+	default y
+endmenu
+menu "hal_nordic (/Users/bernardofalle/ncs/modules/hal/nordic)"
+osource "$(ZEPHYR_HAL_NORDIC_KCONFIG)"
+config ZEPHYR_HAL_NORDIC_MODULE
+	bool
+	default y
+endmenu
+menu "liblc3codec (/Users/bernardofalle/ncs/modules/lib/liblc3codec)"
+osource "$(ZEPHYR_LIBLC3CODEC_KCONFIG)"
+config ZEPHYR_LIBLC3CODEC_MODULE
+	bool
+	default y
+endmenu
+menu "littlefs (/Users/bernardofalle/ncs/modules/fs/littlefs)"
+osource "$(ZEPHYR_LITTLEFS_KCONFIG)"
+config ZEPHYR_LITTLEFS_MODULE
+	bool
+	default y
+endmenu
+menu "loramac-node (/Users/bernardofalle/ncs/modules/lib/loramac-node)"
+osource "$(ZEPHYR_LORAMAC_NODE_KCONFIG)"
+config ZEPHYR_LORAMAC_NODE_MODULE
+	bool
+	default y
+endmenu
+menu "lvgl (/Users/bernardofalle/ncs/modules/lib/gui/lvgl)"
+osource "/Users/bernardofalle/ncs/modules/lib/gui/lvgl/zephyr/Kconfig"
+config ZEPHYR_LVGL_MODULE
+	bool
+	default y
+endmenu
+menu "lz4 (/Users/bernardofalle/ncs/modules/lib/lz4)"
+osource "$(ZEPHYR_LZ4_KCONFIG)"
+config ZEPHYR_LZ4_MODULE
+	bool
+	default y
+endmenu
+menu "nanopb (/Users/bernardofalle/ncs/modules/lib/nanopb)"
+osource "$(ZEPHYR_NANOPB_KCONFIG)"
+config ZEPHYR_NANOPB_MODULE
+	bool
+	default y
+endmenu
+menu "TraceRecorder (/Users/bernardofalle/ncs/modules/debug/TraceRecorder)"
+osource "/Users/bernardofalle/ncs/modules/debug/TraceRecorder/kernelports/Zephyr/Kconfig"
+config ZEPHYR_TRACERECORDER_MODULE
+	bool
+	default y
+endmenu
+menu "zscilib (/Users/bernardofalle/ncs/modules/lib/zscilib)"
+osource "/Users/bernardofalle/ncs/modules/lib/zscilib/Kconfig.zscilib"
+config ZEPHYR_ZSCILIB_MODULE
+	bool
+	default y
+endmenu
+menu "nrfxlib (/Users/bernardofalle/ncs/nrfxlib)"
+osource "/Users/bernardofalle/ncs/nrfxlib/Kconfig.nrfxlib"
+config ZEPHYR_NRFXLIB_MODULE
+	bool
+	default y
+endmenu
+menu "connectedhomeip (/Users/bernardofalle/ncs/modules/lib/matter)"
+osource "/Users/bernardofalle/ncs/modules/lib/matter/config/nrfconnect/chip-module/Kconfig"
+config ZEPHYR_CONNECTEDHOMEIP_MODULE
+	bool
+	default y
+endmenu
