@@ -2,17 +2,18 @@
 
 /* Function that detects he position and agle of the guideline */
 void guideLineSearch(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH], uint16_t* pos, float* angle) {
-    uint16_t pos_gf, pos_gn ; /* Positions of guide line in GF and GN */
-    uint16_t x_gn = 0;
-    uint16_t x_gf = GN - 1;
+    uint16_t x_gf, x_gn ; /* Positions of guide line in GF and GN on X-axis */
+    /* Positions on the Y-axis */
+    uint16_t y_gn = 0;
+    uint16_t y_gf = GN - 1;
     /* Iterate through GN and GF to discover the position of the guidelines */
     for(uint16_t i = GF; i <= GN; i += GN - 1){
         for(uint16_t j = 0; j < IMGWIDTH; j++){
             if(imageBuf[i][j] == GUIDELINE_COLOR){
                 if(i == GF){
-                    pos_gf = j; /* (X,Y) = (pos_gf, gn) */
+                    x_gf = j; /* (X,Y) = (pos_gf, y_gf) */
                 }else{
-                    pos_gn = j; /* (X,Y) = (pos_gn, 0) */ 
+                    x_gn = j; /* (X,Y) = (pos_gn, y_gn) */ 
                 }
                 break;
             }
@@ -21,9 +22,9 @@ void guideLineSearch(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH], uint16_t* pos, float
     /* When the guideline is vertical the angle is 0 rad, positive angles are associated with a tilt to the right 
     and negative angles to a tilt to the left 
     Calculation of angle between the two points in radians */
-    *angle = atan2(pos_gf - pos_gn, x_gf - x_gn);
+    *angle = atan2(x_gf - x_gn, y_gf - y_gn);
     /* Computing of the position */
-    *pos = ((pos_gn + 1) * 100) / IMGWIDTH;
+    *pos = ((x_gn + 1) * 100) / IMGWIDTH;
 }
 
 /* Function to look for closeby obstacles */
@@ -49,7 +50,7 @@ uint16_t obstCount(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH]) {
     uint16_t obs = 0; 
     /* Counter for obstacle pixels, counts as obstacles when at least 2 pixels long */
     uint16_t c_pixels = 0; 
-    /* Iterating through the CSA, tops to bottom, left column to right column */
+    /* Iterating through the image, tops to bottom, left column to right column */
 	for (uint16_t i = 0; i < IMGHEIGHT; i++)
     {
 
@@ -64,7 +65,7 @@ uint16_t obstCount(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH]) {
             /* Reset the pixel count when there no pixels in the sequence */
             c_pixels = 0;
         }
-        /* Same step as done above but to avoid bugs with last pixel fromn last row */
+        /* Same step as done above but to avoid bugs with last pixel from last row */
         if(c_pixels >= 2) obs++;
         
         c_pixels = 0;

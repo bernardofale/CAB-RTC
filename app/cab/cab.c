@@ -56,6 +56,7 @@ uint16_t* get_mes(cab* cab_id){
     k_mutex_unlock(&cab_id->mutex);
     return buffer;
 }
+
 void unget(uint16_t* mes_pointer, cab* cab_id){
     k_mutex_lock(&cab_id->mutex, K_FOREVER);
     uint16_t i = calculateIndex(mes_pointer, cab_id);
