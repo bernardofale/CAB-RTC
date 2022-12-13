@@ -252,7 +252,7 @@ rule C_STATIC_LIBRARY_LINKER__arch__arm__core__aarch32__mpu_
 #############################################
 # Rule for compiling C files.
 
-rule C_COMPILER__lib__libc__minimal_
+rule C_COMPILER__lib__libc__newlib_
   depfile = $DEP_FILE
   deps = gcc
   command = ccache /Users/bernardofalle/zephyr-sdk-0.15.1/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -262,7 +262,7 @@ rule C_COMPILER__lib__libc__minimal_
 #############################################
 # Rule for linking C static library.
 
-rule C_STATIC_LIBRARY_LINKER__lib__libc__minimal_
+rule C_STATIC_LIBRARY_LINKER__lib__libc__newlib_
   command = $PRE_LINK && ccache /usr/local/Cellar/cmake/3.24.2/bin/cmake -E rm -f $TARGET_FILE && ccache /Users/bernardofalle/zephyr-sdk-0.15.1/arm-zephyr-eabi/bin/arm-zephyr-eabi-ar qc $TARGET_FILE $LINK_FLAGS $in && ccache /Users/bernardofalle/zephyr-sdk-0.15.1/arm-zephyr-eabi/bin/arm-zephyr-eabi-ranlib $TARGET_FILE && ccache /usr/local/Cellar/cmake/3.24.2/bin/cmake -E touch $TARGET_FILE && $POST_BUILD
   description = Linking C static library $TARGET_FILE
   restat = $RESTAT
@@ -586,6 +586,25 @@ rule C_COMPILER__cab_
 # Rule for linking C static library.
 
 rule C_STATIC_LIBRARY_LINKER__cab_
+  command = $PRE_LINK && ccache /usr/local/Cellar/cmake/3.24.2/bin/cmake -E rm -f $TARGET_FILE && ccache /Users/bernardofalle/zephyr-sdk-0.15.1/arm-zephyr-eabi/bin/arm-zephyr-eabi-ar qc $TARGET_FILE $LINK_FLAGS $in && ccache /Users/bernardofalle/zephyr-sdk-0.15.1/arm-zephyr-eabi/bin/arm-zephyr-eabi-ranlib $TARGET_FILE && ccache /usr/local/Cellar/cmake/3.24.2/bin/cmake -E touch $TARGET_FILE && $POST_BUILD
+  description = Linking C static library $TARGET_FILE
+  restat = $RESTAT
+
+
+#############################################
+# Rule for compiling C files.
+
+rule C_COMPILER__img_algo_
+  depfile = $DEP_FILE
+  deps = gcc
+  command = ccache /Users/bernardofalle/zephyr-sdk-0.15.1/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
+  description = Building C object $out
+
+
+#############################################
+# Rule for linking C static library.
+
+rule C_STATIC_LIBRARY_LINKER__img_algo_
   command = $PRE_LINK && ccache /usr/local/Cellar/cmake/3.24.2/bin/cmake -E rm -f $TARGET_FILE && ccache /Users/bernardofalle/zephyr-sdk-0.15.1/arm-zephyr-eabi/bin/arm-zephyr-eabi-ar qc $TARGET_FILE $LINK_FLAGS $in && ccache /Users/bernardofalle/zephyr-sdk-0.15.1/arm-zephyr-eabi/bin/arm-zephyr-eabi-ranlib $TARGET_FILE && ccache /usr/local/Cellar/cmake/3.24.2/bin/cmake -E touch $TARGET_FILE && $POST_BUILD
   description = Linking C static library $TARGET_FILE
   restat = $RESTAT

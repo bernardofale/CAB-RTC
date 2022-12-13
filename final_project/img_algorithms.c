@@ -20,7 +20,7 @@ thus it is on the first line of the array) */
 
 
 uint8_t buffer[IMGHEIGHT][IMGWIDTH]= 
-	{	{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, 
+	{	{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x80, 0x80, 0xFF, 0x00, 0x00, 0x00}, 
 		{0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, 
 		{0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 		{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
@@ -31,23 +31,66 @@ uint8_t buffer[IMGHEIGHT][IMGWIDTH]=
 		{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 		{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 		{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-		{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00},
+		{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00},
+		{0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 		{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-		{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00},
-		{0x00, 0x00, 0x80, 0x80, 0x80, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00},					
-		{0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00} 
+		{0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00},					
+		{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00} 
 	};
-/* Tops to bottom (in to r) and left to right (jn to r) */
-static uint16_t count_obstacles(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH], uint16_t r, uint16_t c, uint16_t in, uint16_t jn){
+
+/* Function that detects he position and agle of the guideline */
+void guideLineSearch(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH], uint16_t *pos, float *angle) {
+    uint16_t pos_gf, pos_gn ; /* Positions of guide line in GF and GN */
+    uint16_t x_gn = 0;
+    uint16_t x_gf = GN - 1;
+    /* Iterate through GN and GF to discover the position of the guidelines */
+    for(uint16_t i = GF; i <= GN; i += GN - 1){
+        for(uint16_t j = 0; j < IMGWIDTH; j++){
+            if(imageBuf[i][j] == GUIDELINE_COLOR){
+                if(i == GF){
+                    pos_gf = j; /* (X,Y) = (pos_gf, gn) */
+                }else{
+                    pos_gn = j; /* (X,Y) = (pos_gn, 0) */ 
+                }
+                break;
+            }
+        }
+    }
+    /* When the guideline is vertical the angle is 0 rad, positive angles are associated with a tilt to the right 
+    and negative angles to a tilt to the left 
+    Calculation of angle between the two points in radians */
+    *angle = atan2(pos_gf - pos_gn, x_gf - x_gn);
+
+    /* Computing of the position */
+    *pos = ((pos_gn + 1) * 100) / IMGWIDTH;
+}
+
+/* Function to look for closeby obstacles */
+uint8_t nearObstSearch(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH]) {
+    /* Iterating through the CSA, tops to bottom, left column to right column */
+	for (uint16_t i = CSA_FRONT; i < IMGHEIGHT; i++)
+    {
+        for (int j = CSA_LEFT; j < CSA_RIGHT; j++)
+        {   /* If the pixel is an obstacle returns 1 */    
+            if(imageBuf[i][j] == OBSTACLE_COLOR){
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+/* Function that counts obstacles. */
+uint16_t obstCount(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH]) {
     /* Number of obstacles */
     uint16_t obs = 0; 
     /* Counter for obstacle pixels, counts as obstacles when at least 2 pixels long */
     uint16_t c_pixels = 0; 
     /* Iterating through the CSA, tops to bottom, left column to right column */
-	for (uint16_t i = in; i < r; i++)
+	for (uint16_t i = 0; i < IMGHEIGHT; i++)
     {
 
-        for (int j = jn; j < c; j++)
+        for (int j = 0; j < IMGWIDTH; j++)
         {   /* If the pixel is an obstacle the pixel count increments and goes to its next iteration */    
             if(imageBuf[i][j] == OBSTACLE_COLOR){
                 c_pixels++;
@@ -64,47 +107,6 @@ static uint16_t count_obstacles(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH], uint16_t 
         c_pixels = 0;
     }
 
-    return obs;
-}
-
-/* Function that detects he position and agle of the guideline */
-void guideLineSearch(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH], uint16_t *pos, float *angle) {
-    uint16_t pos_gf, pos_gn ; /* Positions of guide line in GF and GN */
-    uint16_t x_gn = 0;
-    uint16_t x_gf = GN - 1;
-    /* Iterate through GN and GF to discover the position of the guidelines */
-    for(uint16_t i = GF; i <= GN; i += GN - 1){
-        for(uint16_t j = 0; j < IMGWIDTH; j++){
-            if(imageBuf[i][j] == GUIDELINE_COLOR){
-                if(i == GF){
-                    pos_gf = j; /* (X,Y) = (pos_gf, gn) */
-                    printf("Position in GF (Far): (%d,%d)\n", x_gf, pos_gf);
-                }else{
-                    pos_gn = j; /* (X,Y) = (pos_gn, 0) */ 
-                    printf("Position in GN (near): (%d,%d)\n", x_gn, pos_gn);
-                }
-                break;
-            }
-        }
-    }
-    /* When the guideline is vertical the angle is 0 rad, positive angles are associated with a tilt to the right 
-    and negative angles to a tilt to the left 
-    Calculation of angle between the two points in radians */
-    *angle = atan2(pos_gf - pos_gn, x_gf - x_gn);
-
-    /* Computing of the position */
-    *pos = ((pos_gn + 1) * 100) / IMGWIDTH;
-}
-
-/* Function to look for closeby obstacles */
-uint16_t nearObstSearch(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH]) {
-    uint16_t nobs = count_obstacles(imageBuf, IMGHEIGHT, CSA_RIGHT, CSA_FRONT, CSA_LEFT);
-    return nobs;
-}
-
-/* Function that counts obstacles. */
-uint16_t obstCount(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH]) {
-	uint16_t obs = count_obstacles(imageBuf, IMGHEIGHT, IMGWIDTH, 0, 0);
     return obs;
 }
 

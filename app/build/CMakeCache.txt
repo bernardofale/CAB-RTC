@@ -512,7 +512,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=117
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=118
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
@@ -568,6 +568,4 @@ _Python3_EXECUTABLE:INTERNAL=/usr/local/opt/python@3.10/bin/python3.10
 //Python3 Properties
 _Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;10;8;64;;cpython-310-darwin;/usr/local/opt/python@3.10/Frameworks/Python.framework/Versions/3.10/lib/python3.10;/usr/local/opt/python@3.10/Frameworks/Python.framework/Versions/3.10/lib/python3.10;/usr/local/opt/python@3.10/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages;/usr/local/opt/python@3.10/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages
 _Python3_INTERPRETER_SIGNATURE:INTERNAL=7418782b602c052c870ec2dd768e682a
-//Test check_fmacro_prefix_map__Users_bernardofalle_Documents_SOTR_app_CMAKE_SOURCE_DIR_C__nostartfiles__nostdlib__isystem___Users_bernardofalle_zephyr_sdk_0_15_1_arm_zephyr_eabi_bin____lib_gcc_arm_zephyr_eabi_12_1_0_include___isystem___Users_bernardofalle_zephyr_sdk_0_15_1_arm_zephyr_eabi_bin____lib_gcc_arm_zephyr_eabi_12_1_0_include_fixed___Wl___unresolved_symbols_ignore_in_object_files__Wl___entry_0
-check_fmacro_prefix_map__Users_bernardofalle_Documents_SOTR_app_CMAKE_SOURCE_DIR_C__nostartfiles__nostdlib__isystem___Users_bernardofalle_zephyr_sdk_0_15_1_arm_zephyr_eabi_bin____lib_gcc_arm_zephyr_eabi_12_1_0_include___isystem___Users_bernardofalle_zephyr_sdk_0_15_1_arm_zephyr_eabi_bin____lib_gcc_arm_zephyr_eabi_12_1_0_include_fixed___Wl___unresolved_symbols_ignore_in_object_files__Wl___entry_0:INTERNAL=1
 

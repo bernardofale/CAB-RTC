@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#define N_TASKS 3
+#define N_TASKS 2
 
 struct cab;
 typedef struct cab {
@@ -14,9 +14,8 @@ typedef struct cab {
     uint16_t dim; /* dimension (in bytes) of the message type for which that CAB is dedicated */
     uint16_t size; /* num * dim */
     uint16_t* buffers; /* Pointer of the buffers contained in the CAB */
-    uint16_t flags[N_TASKS]; /* Flags to identify which buffers are in use*/
+    uint16_t flags[N_TASKS + 1]; /* Flags to identify which buffers are in use*/
     uint16_t* head; /* Most recent buffer */
-    uint16_t c;
     pthread_mutex_t mutex;
 
 } cab;

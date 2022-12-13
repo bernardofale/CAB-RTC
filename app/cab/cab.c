@@ -26,9 +26,9 @@ cab* open_cab(char* name, uint16_t num, uint16_t dim, uint16_t* first){
 uint16_t* reserve(cab* cab_id){
     uint16_t* buffer;
     k_mutex_lock(&cab_id->mutex, K_FOREVER);
-    for(int i = 0; i< N_TASKS; i++){
-        if(cab_id->flags[i] == 0){
-            buffer = cab_id->buffers + (i * cab_id->num);
+    for(int i = 0; i< N_TASKS + 1; i++){
+        buffer = cab_id->buffers + (i * cab_id->num);
+        if(cab_id->flags[i] == 0 && cab_id->head != buffer){
             cab_id->flags[i] = 1;
             k_mutex_unlock(&cab_id->mutex);
             return buffer;
@@ -52,14 +52,14 @@ uint16_t* get_mes(cab* cab_id){
     k_mutex_lock(&cab_id->mutex, K_FOREVER);
     buffer = cab_id->head;
     uint16_t i = calculateIndex(buffer, cab_id);
-    cab_id->flags[i] = 1;
+    cab_id->flags[i]++;
     k_mutex_unlock(&cab_id->mutex);
     return buffer;
 }
-void unget(uint16_t* mesgointer, cab* cab_id){
+void unget(uint16_t* mes_pointer, cab* cab_id){
     k_mutex_lock(&cab_id->mutex, K_FOREVER);
-    uint16_t i = calculateIndex(mesgointer, cab_id);
-    cab_id->flags[i] = 0;
+    uint16_t i = calculateIndex(mes_pointer, cab_id);
+    cab_id->flags[i]--;
     k_mutex_unlock(&cab_id->mutex);
 }
 

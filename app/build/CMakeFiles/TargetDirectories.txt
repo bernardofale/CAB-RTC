@@ -56,9 +56,9 @@
 /Users/bernardofalle/Documents/SOTR/app/build/zephyr/lib/CMakeFiles/rebuild_cache.dir
 /Users/bernardofalle/Documents/SOTR/app/build/zephyr/lib/libc/CMakeFiles/edit_cache.dir
 /Users/bernardofalle/Documents/SOTR/app/build/zephyr/lib/libc/CMakeFiles/rebuild_cache.dir
-/Users/bernardofalle/Documents/SOTR/app/build/zephyr/lib/libc/minimal/CMakeFiles/lib__libc__minimal.dir
-/Users/bernardofalle/Documents/SOTR/app/build/zephyr/lib/libc/minimal/CMakeFiles/edit_cache.dir
-/Users/bernardofalle/Documents/SOTR/app/build/zephyr/lib/libc/minimal/CMakeFiles/rebuild_cache.dir
+/Users/bernardofalle/Documents/SOTR/app/build/zephyr/lib/libc/newlib/CMakeFiles/lib__libc__newlib.dir
+/Users/bernardofalle/Documents/SOTR/app/build/zephyr/lib/libc/newlib/CMakeFiles/edit_cache.dir
+/Users/bernardofalle/Documents/SOTR/app/build/zephyr/lib/libc/newlib/CMakeFiles/rebuild_cache.dir
 /Users/bernardofalle/Documents/SOTR/app/build/zephyr/lib/posix/CMakeFiles/lib__posix.dir
 /Users/bernardofalle/Documents/SOTR/app/build/zephyr/lib/posix/CMakeFiles/edit_cache.dir
 /Users/bernardofalle/Documents/SOTR/app/build/zephyr/lib/posix/CMakeFiles/rebuild_cache.dir
@@ -297,3 +297,6 @@
 /Users/bernardofalle/Documents/SOTR/app/build/cab/CMakeFiles/cab.dir
 /Users/bernardofalle/Documents/SOTR/app/build/cab/CMakeFiles/edit_cache.dir
 /Users/bernardofalle/Documents/SOTR/app/build/cab/CMakeFiles/rebuild_cache.dir
+/Users/bernardofalle/Documents/SOTR/app/build/img_algo/CMakeFiles/img_algo.dir
+/Users/bernardofalle/Documents/SOTR/app/build/img_algo/CMakeFiles/edit_cache.dir
+/Users/bernardofalle/Documents/SOTR/app/build/img_algo/CMakeFiles/rebuild_cache.dir
