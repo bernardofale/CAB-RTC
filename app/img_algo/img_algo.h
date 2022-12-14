@@ -18,7 +18,7 @@ thus it is on the first line of the array) */
 #define GN IMGHEIGHT	/* Row to look for the guide line - NEAR */
 #define CSA_LEFT IMGWIDTH/4	/* Left limit of the sensor area */
 #define CSA_RIGHT IMGWIDTH * 3/4    /* Right limit of the sensor area */
-#define CSA_FRONT (IMGHEIGHT/2) - 1 /* Upper bound of the area sensor */
+#define CSA_FRONT (IMGHEIGHT/2) /* Upper bound of the area sensor */
 
 void guideLineSearch(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH], uint16_t* pos, float* angle);
 uint8_t nearObstSearch(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH]);

@@ -1,6 +1,7 @@
 #include "img_algo.h"
 
 /* Function that detects he position and agle of the guideline */
+/* Worst case scenario: The guidelines in GN/GF are on the last index of each row*/
 void guideLineSearch(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH], uint16_t* pos, float* angle) {
     uint16_t x_gf, x_gn ; /* Positions of guide line in GF and GN on X-axis */
     /* Positions on the Y-axis */
@@ -11,9 +12,9 @@ void guideLineSearch(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH], uint16_t* pos, float
         for(uint16_t j = 0; j < IMGWIDTH; j++){
             if(imageBuf[i][j] == GUIDELINE_COLOR){
                 if(i == GF){
-                    x_gf = j; /* (X,Y) = (pos_gf, y_gf) */
+                    x_gf = j; /* (X,Y) = (x_gf, y_gf) */
                 }else{
-                    x_gn = j; /* (X,Y) = (pos_gn, y_gn) */ 
+                    x_gn = j; /* (X,Y) = (x_gn, y_gn) */ 
                 }
                 break;
             }
@@ -31,7 +32,7 @@ void guideLineSearch(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH], uint16_t* pos, float
 uint8_t nearObstSearch(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH]) {
     uint8_t flag = 0;
     /* Iterating through the CSA, tops to bottom, left column to right column */
-	for (uint16_t i = CSA_FRONT; i < IMGHEIGHT; i++)
+	for (uint16_t i = GN - 1; i >= CSA_FRONT; i--)
     {
         for (int j = CSA_LEFT; j < CSA_RIGHT; j++)
         {   /* If the pixel is an obstacle returns 1 */    
