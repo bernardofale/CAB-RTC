@@ -74,3 +74,4 @@ uint16_t obstCount(uint8_t imageBuf[IMGHEIGHT][IMGWIDTH]) {
 
     return obs;
 }
+

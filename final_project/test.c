@@ -3,10 +3,10 @@
 int main(void){
 
     cab* cab_id;
-    uint16_t first[2] = {5, 10};
-    cab_id = open_cab("CAB", 1, 2, first);
+    uint16_t first[3] = {5, 10, 1};
+    cab_id = open_cab("CAB", 3, 2, first);
 
-    for(int i = 0; i < 2; i++){
+    for(int i = 0; i < 3; i++){
         printf("Value in CAB -> %d\n", *(cab_id->head + i));
     }
     
