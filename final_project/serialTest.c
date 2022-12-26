@@ -37,37 +37,10 @@
 #include <unistd.h> // write(), read(), close()
 
 int main() {
-	// Open the input file
-	FILE *fp = fopen("image.raw", "rb");
-	if (!fp) {
-		printf("Error opening input file\n");
-		return 1;
-	}
-
-	// Allocate the image buffer
-	uint8_t *buffer = malloc(WIDTH * HEIGHT);
-	if (!buffer) {
-		printf("Error allocating buffer\n");
-		return 1;
-	}
-
-	// Read the image data into the buffer
-	fread(buffer, 1, WIDTH * HEIGHT, fp);
-
-	// Close the input file
-	fclose(fp);
-
-	/*
-	for (int y = 0; y < HEIGHT; y++) {
-		for (int x = 0; x < WIDTH; x++) {
-		printf("%d ", buffer[y * WIDTH + x]);
-		}
-		printf("%s", "\n");
-	}
-	*/
+	
 
     // Open the serial port. Change device path as needed (currently set to an standard FTDI USB-UART cable type device)
-    int serial_port = open("/dev/tty.usbmodem0006839528221", O_RDWR);
+    int serial_port = open("/dev/tty", O_RDWR);
 
     // Create new termios struct, we call it 'tty' for convention
     struct termios tty;
@@ -110,8 +83,37 @@ int main() {
       printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
       return 1;
     }
-	
-    write(serial_port, buffer, WIDTH * HEIGHT);
+    for (int i = 1; i < 100; i++)
+    {
+      
+      char str[25];
+      sprintf(str,"images/img%d.raw",i);
+      // printf("%s\n",str);
+
+      // Open the input file
+      FILE *fp = fopen(str, "rb");
+      if (!fp) {
+        printf("Error opening input file\n");
+        return 1;
+      }
+
+      // Allocate the image buffer
+      uint8_t *buffer = malloc(WIDTH * HEIGHT);
+      if (!buffer) {
+        printf("Error allocating buffer\n");
+        return 1;
+      }
+
+      // Read the image data into the buffer
+      fread(buffer, 1, WIDTH * HEIGHT, fp);
+
+      // Close the input file
+      fclose(fp);
+
+      // write(serial_port, buffer, WIDTH * HEIGHT);
+    }
+    
+      
 
 	// Allocate memory for read buffer, set size according to your needs
     char read_buf [256];
@@ -121,24 +123,26 @@ int main() {
     // call printf() easily.
     memset(&read_buf, '\0', sizeof(read_buf));
 
+    //TODO: we need this loop to listen in the zephir console the USB-UART Port
+    
     /* Loop forever and rpint output 
     * Stop with CTRL-C */
-    while(1) {
-        // Read bytes. The behaviour of read() (e.g. does it block?,
-        // how long does it block for?) depends on the configuration
-        // settings above, specifically VMIN and VTIME
-        int num_bytes = read(serial_port, &read_buf, sizeof(read_buf));
+    // while(1) {
+    //     // Read bytes. The behaviour of read() (e.g. does it block?,
+    //     // how long does it block for?) depends on the configuration
+    //     // settings above, specifically VMIN and VTIME
+    //     int num_bytes = read(serial_port, &read_buf, sizeof(read_buf));
 
-        // n is the number of bytes read. n may be 0 if no bytes were received, and can also be -1 to signal an error.
-        if (num_bytes < 0) {
-            printf("Error reading: %s", strerror(errno));
-            return 1;
-        }
+    //     // n is the number of bytes read. n may be 0 if no bytes were received, and can also be -1 to signal an error.
+    //     if (num_bytes < 0) {
+    //         printf("Error reading: %s", strerror(errno));
+    //         return 1;
+    //     }
 
-        // Here we assume we received ASCII data, but you might be sending raw bytes (in that case, don't try and
-        // print it to the screen like this!)
-        printf("Read %i bytes. Received message: %s", num_bytes, read_buf);        
-    }
+    //     // Here we assume we received ASCII data, but you might be sending raw bytes (in that case, don't try and
+    //     // print it to the screen like this!)
+    //     printf("Read %i bytes. Received message: %s", num_bytes, read_buf);        
+    // }
 
 
 	close(serial_port);
