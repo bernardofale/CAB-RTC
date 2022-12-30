@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define WIDTH 128
 #define HEIGHT 128
@@ -40,7 +41,7 @@ int main() {
 	
 
     // Open the serial port. Change device path as needed (currently set to an standard FTDI USB-UART cable type device)
-    int serial_port = open("/dev/tty", O_RDWR);
+    int serial_port = open("/dev/tty.usbmodem0006839528221", O_RDWR);
 
     // Create new termios struct, we call it 'tty' for convention
     struct termios tty;
@@ -83,15 +84,9 @@ int main() {
       printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
       return 1;
     }
-    for (int i = 1; i < 100; i++)
-    {
-      
-      char str[25];
-      sprintf(str,"images/img%d.raw",i);
-      // printf("%s\n",str);
 
       // Open the input file
-      FILE *fp = fopen(str, "rb");
+      FILE *fp = fopen("image.raw", "rb");
       if (!fp) {
         printf("Error opening input file\n");
         return 1;
@@ -106,16 +101,22 @@ int main() {
 
       // Read the image data into the buffer
       fread(buffer, 1, WIDTH * HEIGHT, fp);
-
+      
       // Close the input file
       fclose(fp);
 
-      // write(serial_port, buffer, WIDTH * HEIGHT);
-    }
-    
+      int ret;
+      int x = 0;
       
+      //int t = time
+      while(x != 129){
+        ret = write(serial_port, buffer, 127);
+        usleep(19000);
+        printf("%d\n", ret);
+        x++;
+      }
 
-	// Allocate memory for read buffer, set size according to your needs
+	  // Allocate memory for read buffer, set size according to your needs
     char read_buf [256];
 
     // Normally you wouldn't do this memset() call, but since we will just receive
