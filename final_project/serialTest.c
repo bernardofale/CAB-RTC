@@ -69,8 +69,7 @@ int main() {
 
     tty.c_oflag &= ~OPOST; // Prevent special interpretation of output bytes (e.g. newline chars)
     tty.c_oflag &= ~ONLCR; // Prevent conversion of newline to carriage return/line feed
-    // tty.c_oflag &= ~OXTABS; // Prevent conversion of tabs to spaces (NOT PRESENT ON LINUX)
-    // tty.c_oflag &= ~ONOEOT; // Prevent removal of C-d chars (0x004) in output (NOT PRESENT ON LINUX)
+  
 
     tty.c_cc[VTIME] = 10;    // Wait for up to 1s (10 deciseconds), returning as soon as any data is received.
     tty.c_cc[VMIN] = 0;
@@ -84,8 +83,11 @@ int main() {
       printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
       return 1;
     }
-
-      // Open the input file
+    /* Variables to determine the period of image uploading */
+    clock_t start, end;
+    double elapsed;
+    double max = 0;
+    // Open the input file
       FILE *fp = fopen("image.raw", "rb");
       if (!fp) {
         printf("Error opening input file\n");
@@ -101,51 +103,25 @@ int main() {
 
       // Read the image data into the buffer
       fread(buffer, 1, WIDTH * HEIGHT, fp);
-      
       // Close the input file
       fclose(fp);
 
-      int ret;
-      int x = 0;
+    for (int i = 0; i < 99; i++)
+    {
       
-      //int t = time
-      while(x != 129){
-        ret = write(serial_port, buffer, 127);
-        usleep(19000);
-        printf("%d\n", ret);
-        x++;
+      start = clock();
+      int ret = write(serial_port, buffer, 128*128);
+      end = clock();
+      elapsed = (double)(end - start) / CLOCKS_PER_SEC;
+      
+      if(max < elapsed){
+        max = elapsed;
+        printf("MAX elapsed time: %f seconds\n", max); 
       }
-
-	  // Allocate memory for read buffer, set size according to your needs
-    char read_buf [256];
-
-    // Normally you wouldn't do this memset() call, but since we will just receive
-    // ASCII data for this example, we'll set everything to 0 so we can
-    // call printf() easily.
-    memset(&read_buf, '\0', sizeof(read_buf));
-
-    //TODO: we need this loop to listen in the zephir console the USB-UART Port
+    }       
+    //MAX elapsed time with image reading: 774 micro seconds
+    //MAX elapsed time without image reading: 252 micro seconds
     
-    /* Loop forever and rpint output 
-    * Stop with CTRL-C */
-    // while(1) {
-    //     // Read bytes. The behaviour of read() (e.g. does it block?,
-    //     // how long does it block for?) depends on the configuration
-    //     // settings above, specifically VMIN and VTIME
-    //     int num_bytes = read(serial_port, &read_buf, sizeof(read_buf));
-
-    //     // n is the number of bytes read. n may be 0 if no bytes were received, and can also be -1 to signal an error.
-    //     if (num_bytes < 0) {
-    //         printf("Error reading: %s", strerror(errno));
-    //         return 1;
-    //     }
-
-    //     // Here we assume we received ASCII data, but you might be sending raw bytes (in that case, don't try and
-    //     // print it to the screen like this!)
-    //     printf("Read %i bytes. Received message: %s", num_bytes, read_buf);        
-    // }
-
-
-	close(serial_port);
-	return 0; // success
+    close(serial_port);
+    return 0; // success
 };
