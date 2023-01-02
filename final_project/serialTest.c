@@ -37,11 +37,13 @@
 #include <termios.h> // Contains POSIX terminal control definitions
 #include <unistd.h> // write(), read(), close()
 
+#define SERIAL_PORT "/dev/tty.usbmodem0006839528221"
+
 int main() {
 	
 
     // Open the serial port. Change device path as needed (currently set to an standard FTDI USB-UART cable type device)
-    int serial_port = open("/dev/tty.usbmodem0006839528221", O_RDWR);
+    int serial_port = open(SERIAL_PORT, O_RDWR);
 
     // Create new termios struct, we call it 'tty' for convention
     struct termios tty;
@@ -70,8 +72,8 @@ int main() {
     tty.c_oflag &= ~OPOST; // Prevent special interpretation of output bytes (e.g. newline chars)
     tty.c_oflag &= ~ONLCR; // Prevent conversion of newline to carriage return/line feed
   
-
-    tty.c_cc[VTIME] = 10;    // Wait for up to 1s (10 deciseconds), returning as soon as any data is received.
+    /* Changing this settings so the read function blocks until all characters have been read */
+    tty.c_cc[VTIME] = -1;    
     tty.c_cc[VMIN] = 0;
 
     // Set in/out baud rate to be 115200
@@ -87,8 +89,15 @@ int main() {
     clock_t start, end;
     double elapsed;
     double max = 0;
-    // Open the input file
-      FILE *fp = fopen("image.raw", "rb");
+    int y;
+    for (int i = 1; i < 100; i++)
+    {
+      srand(time(NULL));
+      start = clock();
+      char file_name[128];
+      sprintf(file_name, "images/img%d.raw", i);
+      // Open the input file
+      FILE *fp = fopen(file_name, "rb");
       if (!fp) {
         printf("Error opening input file\n");
         return 1;
@@ -105,21 +114,30 @@ int main() {
       fread(buffer, 1, WIDTH * HEIGHT, fp);
       // Close the input file
       fclose(fp);
+      // Set everything to 0x00
+      memset(buffer, 0x00, WIDTH * HEIGHT * sizeof(uint8_t));
 
-    for (int i = 0; i < 99; i++)
-    {
-      
-      start = clock();
+      // Set one random 0xFF byte in a random column of the first row
+      int y = rand() % HEIGHT;
+      buffer[0 * 128 + y] = 0xFF;
+
+      // Set one random 0xFF byte in a random column of the last row
+      y = rand() % HEIGHT;
+      buffer[(WIDTH - 1) * 128 + y] = 0xFF;
+
+    
       int ret = write(serial_port, buffer, 128*128);
       end = clock();
+      printf("Uploaded %s...\n", file_name);
       elapsed = (double)(end - start) / CLOCKS_PER_SEC;
       
       if(max < elapsed){
         max = elapsed;
         printf("MAX elapsed time: %f seconds\n", max); 
       }
+      sleep(10);
     }       
-    //MAX elapsed time with image reading: 774 micro seconds
+    //MAX elapsed time with image reading: 900 micro seconds
     //MAX elapsed time without image reading: 252 micro seconds
     
     close(serial_port);
