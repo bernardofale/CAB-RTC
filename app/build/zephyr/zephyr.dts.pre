@@ -162,7 +162,7 @@
    tx-high-power-supported;
   };
 
-  uart0: uart@40002000 {
+  uart0:uart@40002000 {
 
 
    compatible = "nordic,nrf-uarte";

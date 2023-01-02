@@ -17,14 +17,17 @@
 #define STACK_SIZE 2048
 
 /* Thread scheduling priority */
-#define thread_NOD_prio -1	 /* Near obstacle detection thread, critical task, highest priority */
+#define thread_NOD_prio 1	 /* Near obstacle detection thread, critical task, highest priority */
 #define thread_OBSC_prio 3	 /* Obstacle count thread, non real-time */
 #define thread_OAP_prio 2	 /* Orientation and position thread, soft task */
-#define thread_OUTPUT_prio -1 /* OAP update thread, critical task, highest priority */
+#define thread_OUTPUT_prio 1 /* OAP update thread, critical task, highest priority */
 #define thread_RXDATA_prio 1 /* Thread to handle the reception of serial port data */
 
+/* Uart declarations and defines */
 #define UART_NODE DT_NODELABEL(uart0)    /* UART Node label, see dts */
 #define BUFFERSIZE IMGHEIGHT*IMGWIDTH
+#define RX_TIMEOUT 1000
+#define FATAL_ERR -1 /* Fatal error return code, app terminates */
 
 /* Struct for UART configuration (if using default values is not needed) */
 const struct uart_config uart_cfg = {
@@ -38,8 +41,13 @@ const struct uart_config uart_cfg = {
 /* UART related variables */
 const struct device *uart_dev;          /* Pointer to device struct */ 
 static uint8_t rx_buf[BUFFERSIZE];  /* RX buffer, to store received data */
+static uint8_t rx_buf_rsp[BUFFERSIZE];
+static uint8_t rx_chars[BUFFERSIZE];    /* chars actually received  */
+volatile int rx=0;        /* Number of chars currnetly on the rx buffer */
+uint16_t count = 0;
 
-
+/* UART callback function prototype */
+static void uart_cb(const struct device *dev, struct uart_event *evt, void *user_data);
 
 /* Create thread stack space */
 K_THREAD_STACK_DEFINE(thread_NOD_stack, STACK_SIZE);
@@ -69,7 +77,7 @@ void thread_OAP_code(void *argA, void *argB, void *argC);
 void thread_OUTPUT_code(void *argA, void *argB, void *argC);
 void thread_RXDATA_code(void *argA, void *argB, void *argC);
 
-/* Image simulation */
+/* Image simulation 
 uint8_t buffer[IMGHEIGHT][IMGWIDTH]= 
 	{	{0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0xFF}, 
 		{0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00}, 
@@ -200,20 +208,29 @@ uint8_t buffer[IMGHEIGHT][IMGWIDTH]=
 		{0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00},					
 		{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x80, 0x00, 0x00, 0x00, 0xFF} 
 	};
-
+*/
 /* CAB declaration */
-cab* cab_id;
+cab* cab_NOD;
+cab* cab_OAP;
+cab* cab_OBSC;
 
-/* Semaphor for task synch */
+/* Semaphores for task synch */
 struct k_sem sem_NOD;
 struct k_sem sem_OUTPUT;
+struct k_sem sem_OAP;
 
 void main(void)
 {
+	int err;
 	int arg1 = 0, arg2 = 0, arg3 = 0; // Input args of tasks (actually not used in this case)
-	uint16_t first = 5;
+	uint8_t first_NOD = 0;
+	float first_OAP[2] = {0.0, 0.0};
+	uint16_t first_OBSC = 0;
+
 	/* Initializing the CAB */
-	cab_id = open_cab("CAB", 1, 2, &first);
+	cab_NOD = open_cab("NOD", 1, 1, &first_NOD);
+	cab_OAP = open_cab("OAP", 2, 4, first_OAP);
+	cab_OBSC = open_cab("OBSC", 1, 2, &first_OBSC);
 
 	/* Bind to UART */
     uart_dev= device_get_binding(DT_LABEL(UART_NODE));
@@ -224,15 +241,30 @@ void main(void)
     else {
         printk("UART binding successful\n\r");
     }
-	int ret = uart_configure(uart_dev, &uart_cfg);
-	if (ret) {
-		printf("Error configuring UART\n");
-		return;
-	}
+	/* Configure UART */
+    err = uart_configure(uart_dev, &uart_cfg);
+    if (err == -ENOSYS) { /* If invalid configuration */
+        printk("uart_configure() error. Invalid configuration\n\r");
+        return; 
+    }
+	/* Register callback */
+    err = uart_callback_set(uart_dev, uart_cb, NULL);
+    if (err) {
+        printk("uart_callback_set() error. Error code:%d\n\r",err);
+        return;
+    }
+	/* Enable data reception */
+    err =  uart_rx_enable(uart_dev ,rx_buf,sizeof(rx_buf),RX_TIMEOUT);
+    if (err) {
+        printk("uart_rx_enable() error. Error code:%d\n\r",err);
+        return;
+    }
 
 	/* Create and init semaphore */
     k_sem_init(&sem_NOD, 0, 1); 
 	k_sem_init(&sem_OUTPUT, 0, 1);
+	k_sem_init(&sem_OAP, 0, 1);
+
 
 	/* Creation of tasks */
 	thread_NOD_tid = k_thread_create(&thread_NOD_data, thread_NOD_stack,
@@ -245,7 +277,7 @@ void main(void)
 
 	thread_OBSC_tid = k_thread_create(&thread_OBSC_data, thread_OBSC_stack,
 										K_THREAD_STACK_SIZEOF(thread_OBSC_stack), thread_OBSC_code,
-										NULL, NULL, NULL, thread_OBSC_prio, 0, K_NO_WAIT);
+										NULL, NULL, NULL, thread_OBSC_prio, 0, K_FOREVER);
 
 	thread_OAP_tid = k_thread_create(&thread_OAP_data, thread_OAP_stack,
 										K_THREAD_STACK_SIZEOF(thread_OAP_stack), thread_OAP_code,
@@ -259,7 +291,31 @@ void main(void)
 }
 
 void thread_RXDATA_code(void *argA , void *argB, void *argC){
-	
+	int err;
+	char arr[4] = {'A', 'C', 'K', '\0'};
+	int c = 1;
+    /* Main loop */
+    while(1) {
+        if(rx > 0){  
+			printk("----------------------\nDownloading img%d....\n", c);
+            rx = 0;  /* Reset */
+            err = uart_tx(uart_dev, arr, sizeof(arr), SYS_FOREVER_US);
+            if (err) {
+               printk("uart_tx() error. Error code:%d\n\r",err);
+               return;
+            }
+			c++;
+			for (int y = 0; y < IMGHEIGHT; y++) {
+				for (int x = 0; x < IMGWIDTH; x++) {
+					printf("%d ", rx_chars[y * IMGWIDTH + x]);
+				}
+				printf("%s", "\n");
+			}
+			k_sem_give(&sem_NOD);
+			k_sem_give(&sem_OAP);
+        }
+		k_usleep(7581);
+    }
 }
 /* Critical to the safety of the robot and should be executed at the highest possible rate.
  Worst case scenario: There is an obstacle in the last position of the CSA upper bound  
@@ -268,31 +324,36 @@ void thread_NOD_code(void *argA , void *argB, void *argC){
 	uint32_t start, end;
 	uint32_t wc_exec_time = 1;
 	uint8_t flag;
+	uint8_t *buff;
+
 	while(1){
 		k_sem_take(&sem_NOD, K_FOREVER);
 		start = k_cycle_get_32(); 
-		//printk("----------------------\nThread NOD released\n", start);
-		flag = nearObstSearch(buffer);
+		buff = reserve(cab_NOD);
+		flag = nearObstSearch(rx_chars);
+		*buff = flag;
+		printk("FLAG -> %d\n", flag);
+		put_mes(buff, cab_NOD);
 		end = k_cycle_get_32();
 		if(wc_exec_time < (end-start)) wc_exec_time = k_cyc_to_us_ceil32(end - start);
+		printk("----------------------\nThread NOD executed\nWCET -> %4u\n-----------------\n", wc_exec_time);
 		//printk("Near obstacle -> %4u\n", flag);
-		printk("----------------------\nThread NOD\nWCET -> %4u\n", wc_exec_time);
+		k_sem_give(&sem_OUTPUT);
+		
 	}
 }
 /* Non-real time task 
-   After testing: WCET = 3907us */
+   After testing: WCET = N */
 void thread_OBSC_code(void *argA , void *argB, void *argC){
-	uint32_t start, end;
+	//uint32_t start, end;
 	uint32_t wc_exec_time = 1;
 	uint16_t obs;
 	while(1){
-		start = k_cycle_get_32();
-		obs = obstCount(buffer);
-		end = k_cycle_get_32();
-		if(wc_exec_time < (end-start)) wc_exec_time = k_cyc_to_us_ceil32(end - start);
+		//start = k_cycle_get_32();
+		obs = obstCount(rx_chars);
+		//end = k_cycle_get_32();
+		//if(wc_exec_time < (end-start)) wc_exec_time = k_cyc_to_us_ceil32(end - start);
 		//printk("Number of obstacles -> %4u\n", obs);
-		printk("--------------------\nThread OBSC released\nWCET -> %4u\n", wc_exec_time);
-		k_msleep(1000);
 	}
 	
 }
@@ -304,22 +365,96 @@ void thread_OAP_code(void *argA , void *argB, void *argC){
 	float angle;
 	int32_t start, end;
 	uint32_t wc_exec_time = 1;
-	
+	float* buff;
+
 	while(1){
+		k_sem_take(&sem_OAP, K_FOREVER);
 		start = k_cycle_get_32();
-		guideLineSearch(buffer, &pos, &angle);
+		buff = (float *) reserve(cab_OAP);
+		guideLineSearch(rx_chars, &pos, &angle);
+		*buff = angle;
+		*(buff+1) = pos;
+		put_mes(buff, cab_OAP);
 		end = k_cycle_get_32();
 		if(wc_exec_time < (end-start)) wc_exec_time = k_cyc_to_us_ceil32(end - start);
 		//printk("Angle (Radians): %f\n", angle);
     	//printk("Position (Percentage): %d%%\n", pos);
-		printk("-----------------\nThread OAP released\nWCET -> %4u\n", wc_exec_time);
-		k_msleep(1000);
+		printk("-----------------\nThread OAP executed\nWCET -> %4u\n-----------------\n", wc_exec_time);
+		k_sem_give(&sem_OUTPUT);
 	}
 }
 /* Critical to the safety of the robot and should be executed at the highest possible rate. */
 void thread_OUTPUT_code(void *argA , void *argB, void *argC){
+	int32_t start, end;
+	uint32_t wc_exec_time = 1;
+	float* mes_OAP;
+	uint8_t* mes_NOD;
+
 	while(1){
 		k_sem_take(&sem_OUTPUT, K_FOREVER);
-		printk("---------------------------------\nThread OUTPUT released\n");
+		start = k_cycle_get_32();
+		mes_NOD = (uint8_t *)get_mes(cab_NOD);
+		mes_OAP = (float *)get_mes(cab_OAP);
+		printk("Near obstacle detection -> %d\nOrientation and Position -> %f, %d%%\n", *mes_NOD, *mes_OAP, (uint16_t)*(mes_OAP+1));
+		unget(mes_NOD, cab_NOD);
+		unget(mes_OAP, cab_OAP);
+		end = k_cycle_get_32();
+		if(wc_exec_time < (end-start)) wc_exec_time = k_cyc_to_us_ceil32(end - start);
+		printk("-----------------------\nThread OUTPUT executed\nWCET -> %4u\n-----------------", wc_exec_time);
 	}
+}
+
+static void uart_cb(const struct device *dev, struct uart_event *evt, void *user_data)
+{
+    int err;
+
+    switch (evt->type) {
+	
+        case UART_TX_DONE:
+		    //printk("UART_TX_DONE event \n\r");
+            count = 0;
+            break;
+
+    	case UART_TX_ABORTED:
+	    	printk("UART_TX_ABORTED event \n\r");
+		    break;
+		
+	    case UART_RX_RDY:
+		    //printk("UART_RX_RDY event \n\r");
+            /* Just copy data to a buffer. Usually it is preferable to use e.g. a FIFO to communicate with a task that shall process the messages*/
+            memcpy(&rx_chars, &(rx_buf[evt->data.rx.offset]), evt->data.rx.len);
+            /* Debugging purposes 
+			printk("%4u\n",count); */
+            rx++;   
+		    break;
+
+	    case UART_RX_BUF_REQUEST:
+		    //printk("UART_RX_BUF_REQUEST event \n\r");
+            uart_rx_buf_rsp(uart_dev, rx_buf_rsp, sizeof(rx_buf_rsp));
+		    break;
+
+	    case UART_RX_BUF_RELEASED:
+		    //printk("UART_RX_BUF_RELEASED event \n\r");
+		    break;
+		
+	    case UART_RX_DISABLED: 
+            /* When the RX_BUFF becomes full RX is is disabled automaticaly.  */
+            /* It must be re-enabled manually for continuous reception */
+            //printk("UART_RX_DISABLED event \n\r");
+		    err =  uart_rx_enable(uart_dev ,rx_buf,sizeof(rx_buf),RX_TIMEOUT);
+            if (err) {
+                printk("uart_rx_enable() error. Error code:%d\n\r",err);
+                exit(FATAL_ERR);                
+            }
+		    break;
+
+	    case UART_RX_STOPPED:
+		    //printk("UART_RX_STOPPED event \n\r");
+		    break;
+		
+	    default:
+            //printk("UART: unknown event \n\r");
+		    break;
+    }
+
 }
