@@ -305,12 +305,6 @@ void thread_RXDATA_code(void *argA , void *argB, void *argC){
                return;
             }
 			c++;
-			for (int y = 0; y < IMGHEIGHT; y++) {
-				for (int x = 0; x < IMGWIDTH; x++) {
-					printf("%d ", rx_chars[y * IMGWIDTH + x]);
-				}
-				printf("%s", "\n");
-			}
 			k_sem_give(&sem_NOD);
 			k_sem_give(&sem_OAP);
         }
@@ -412,7 +406,6 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
 	
         case UART_TX_DONE:
 		    //printk("UART_TX_DONE event \n\r");
-            count = 0;
             break;
 
     	case UART_TX_ABORTED:
@@ -423,14 +416,12 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
 		    //printk("UART_RX_RDY event \n\r");
             /* Just copy data to a buffer. Usually it is preferable to use e.g. a FIFO to communicate with a task that shall process the messages*/
             memcpy(&rx_chars, &(rx_buf[evt->data.rx.offset]), evt->data.rx.len);
-            /* Debugging purposes 
-			printk("%4u\n",count); */
             rx++;   
 		    break;
 
 	    case UART_RX_BUF_REQUEST:
 		    //printk("UART_RX_BUF_REQUEST event \n\r");
-            uart_rx_buf_rsp(uart_dev, rx_buf_rsp, sizeof(rx_buf_rsp));
+            //uart_rx_buf_rsp(uart_dev, rx_buf_rsp, sizeof(rx_buf_rsp));
 		    break;
 
 	    case UART_RX_BUF_RELEASED:
