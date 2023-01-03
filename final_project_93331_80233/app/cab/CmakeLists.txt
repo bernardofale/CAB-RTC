@@ -1,0 +1,7 @@
+set(CAB_SRCS
+   cab.h cab.c
+)
+# Set the library type (can be static or dynamic )
+SET (LIB_TYPE STATIC)
+# Create the library
+add_library (cab ${LIB_TYPE} ${CAB_SRCS})

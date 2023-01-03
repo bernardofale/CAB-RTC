@@ -41,10 +41,10 @@ const struct uart_config uart_cfg = {
 /* UART related variables */
 const struct device *uart_dev;          /* Pointer to device struct */ 
 static uint8_t rx_buf[BUFFERSIZE];  /* RX buffer, to store received data */
-static uint8_t rx_buf_rsp[BUFFERSIZE];
+static uint8_t rx_buf_rsp[BUFFERSIZE]; /* Buffer used for continuos reception */
 static uint8_t rx_chars[BUFFERSIZE];    /* chars actually received  */
 volatile int rx=0;        /* Number of chars currnetly on the rx buffer */
-uint16_t count = 0;
+
 
 /* UART callback function prototype */
 static void uart_cb(const struct device *dev, struct uart_event *evt, void *user_data);
@@ -218,6 +218,7 @@ cab* cab_OBSC;
 struct k_sem sem_NOD;
 struct k_sem sem_OUTPUT;
 struct k_sem sem_OAP;
+struct k_sem sem_OBSC;
 
 void main(void)
 {
@@ -254,7 +255,7 @@ void main(void)
         return;
     }
 	/* Enable data reception */
-    err =  uart_rx_enable(uart_dev ,rx_buf,sizeof(rx_buf),RX_TIMEOUT);
+    err =  uart_rx_enable(uart_dev ,rx_buf,sizeof(rx_buf), SYS_FOREVER_US);
     if (err) {
         printk("uart_rx_enable() error. Error code:%d\n\r",err);
         return;
@@ -264,6 +265,7 @@ void main(void)
     k_sem_init(&sem_NOD, 0, 1); 
 	k_sem_init(&sem_OUTPUT, 0, 1);
 	k_sem_init(&sem_OAP, 0, 1);
+	k_sem_init(&sem_OBSC, 0, 1);
 
 
 	/* Creation of tasks */
@@ -307,15 +309,16 @@ void thread_RXDATA_code(void *argA , void *argB, void *argC){
 			c++;
 			k_sem_give(&sem_NOD);
 			k_sem_give(&sem_OAP);
+			k_sem_give(&sem_OBSC);
         }
-		k_usleep(7581);
+		k_usleep(733);
     }
 }
 /* Critical to the safety of the robot and should be executed at the highest possible rate.
  Worst case scenario: There is an obstacle in the last position of the CSA upper bound  
- After testing: WCET = 519us */
+ After testing: WCET = 580us */
 void thread_NOD_code(void *argA , void *argB, void *argC){
-	uint32_t start, end;
+	uint32_t start, end, time;
 	uint32_t wc_exec_time = 1;
 	uint8_t flag;
 	uint8_t *buff;
@@ -326,12 +329,11 @@ void thread_NOD_code(void *argA , void *argB, void *argC){
 		buff = reserve(cab_NOD);
 		flag = nearObstSearch(rx_chars);
 		*buff = flag;
-		printk("FLAG -> %d\n", flag);
 		put_mes(buff, cab_NOD);
 		end = k_cycle_get_32();
-		if(wc_exec_time < (end-start)) wc_exec_time = k_cyc_to_us_ceil32(end - start);
+		time = k_cyc_to_us_ceil32(end - start);
+		if(wc_exec_time < time) wc_exec_time = time;
 		printk("----------------------\nThread NOD executed\nWCET -> %4u\n-----------------\n", wc_exec_time);
-		//printk("Near obstacle -> %4u\n", flag);
 		k_sem_give(&sem_OUTPUT);
 		
 	}
@@ -339,25 +341,33 @@ void thread_NOD_code(void *argA , void *argB, void *argC){
 /* Non-real time task 
    After testing: WCET = N */
 void thread_OBSC_code(void *argA , void *argB, void *argC){
-	//uint32_t start, end;
+	uint32_t start, end, time;
 	uint32_t wc_exec_time = 1;
 	uint16_t obs;
+	uint16_t* buff;
+
 	while(1){
-		//start = k_cycle_get_32();
+		k_sem_take(&sem_OBSC, K_FOREVER);
+		start = k_cycle_get_32();
+		buff = (uint16_t *) reserve(cab_OAP);
 		obs = obstCount(rx_chars);
-		//end = k_cycle_get_32();
-		//if(wc_exec_time < (end-start)) wc_exec_time = k_cyc_to_us_ceil32(end - start);
-		//printk("Number of obstacles -> %4u\n", obs);
+		*buff = obs;
+		put_mes(buff, cab_OBSC);
+		end = k_cycle_get_32();
+		time = k_cyc_to_us_ceil32(end - start);
+		if(wc_exec_time < time) wc_exec_time = time;
+		printk("----------------------\nThread OBSC executed\nWCET -> %4u\n-----------------\n", wc_exec_time);
+		k_sem_give(&sem_OUTPUT);
 	}
 	
 }
 /* Soft real-time task, being executed at a second priority level.
- Worst case scenario: The guidelines in GN/GF are on the last index of each row 
- After testing: WCET = 62us */
+ Worst case scenario: The guideline in GN is on the last index of its row, and GF is in the middle of its row
+ After testing: WCET = 153us */
 void thread_OAP_code(void *argA , void *argB, void *argC){
 	uint16_t pos;
 	float angle;
-	int32_t start, end;
+	uint32_t start, end, time;
 	uint32_t wc_exec_time = 1;
 	float* buff;
 
@@ -370,7 +380,8 @@ void thread_OAP_code(void *argA , void *argB, void *argC){
 		*(buff+1) = pos;
 		put_mes(buff, cab_OAP);
 		end = k_cycle_get_32();
-		if(wc_exec_time < (end-start)) wc_exec_time = k_cyc_to_us_ceil32(end - start);
+		time = k_cyc_to_us_ceil32(end - start);
+		if(wc_exec_time < time) wc_exec_time = time;
 		//printk("Angle (Radians): %f\n", angle);
     	//printk("Position (Percentage): %d%%\n", pos);
 		printk("-----------------\nThread OAP executed\nWCET -> %4u\n-----------------\n", wc_exec_time);
@@ -378,23 +389,28 @@ void thread_OAP_code(void *argA , void *argB, void *argC){
 	}
 }
 /* Critical to the safety of the robot and should be executed at the highest possible rate. */
+/* WCET = 24781us */
 void thread_OUTPUT_code(void *argA , void *argB, void *argC){
-	int32_t start, end;
+	uint32_t start, end, time;
 	uint32_t wc_exec_time = 1;
 	float* mes_OAP;
 	uint8_t* mes_NOD;
+	uint16_t* mes_OBSC;
 
 	while(1){
 		k_sem_take(&sem_OUTPUT, K_FOREVER);
 		start = k_cycle_get_32();
 		mes_NOD = (uint8_t *)get_mes(cab_NOD);
 		mes_OAP = (float *)get_mes(cab_OAP);
-		printk("Near obstacle detection -> %d\nOrientation and Position -> %f, %d%%\n", *mes_NOD, *mes_OAP, (uint16_t)*(mes_OAP+1));
+		mes_OBSC = (uint16_t *)get_mes(cab_OBSC);
+		printk("Near obstacle detection -> %4u\nOrientation and Position -> %f, %d%%\nNumber of obstacles -> %4u\n", *mes_NOD, *mes_OAP, (uint16_t)*(mes_OAP+1), *mes_OBSC);
 		unget(mes_NOD, cab_NOD);
 		unget(mes_OAP, cab_OAP);
+		unget(mes_OBSC, cab_OBSC);
 		end = k_cycle_get_32();
-		if(wc_exec_time < (end-start)) wc_exec_time = k_cyc_to_us_ceil32(end - start);
-		printk("-----------------------\nThread OUTPUT executed\nWCET -> %4u\n-----------------", wc_exec_time);
+		time = k_cyc_to_us_ceil32(end - start);
+		if(wc_exec_time < time) wc_exec_time = time;
+		printf("-----------------------\nThread OUTPUT executed\nWCET -> %4u\n-----------------", wc_exec_time);
 	}
 }
 
@@ -405,27 +421,22 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
     switch (evt->type) {
 	
         case UART_TX_DONE:
-		    //printk("UART_TX_DONE event \n\r");
             break;
 
     	case UART_TX_ABORTED:
-	    	printk("UART_TX_ABORTED event \n\r");
 		    break;
 		
 	    case UART_RX_RDY:
-		    //printk("UART_RX_RDY event \n\r");
-            /* Just copy data to a buffer. Usually it is preferable to use e.g. a FIFO to communicate with a task that shall process the messages*/
-            memcpy(&rx_chars, &(rx_buf[evt->data.rx.offset]), evt->data.rx.len);
+			memcpy(&rx_chars, &(evt->data.rx.buf[evt->data.rx.offset]), evt->data.rx.len);
             rx++;   
 		    break;
 
 	    case UART_RX_BUF_REQUEST:
-		    //printk("UART_RX_BUF_REQUEST event \n\r");
-            //uart_rx_buf_rsp(uart_dev, rx_buf_rsp, sizeof(rx_buf_rsp));
+            uart_rx_buf_rsp(uart_dev, rx_buf_rsp, sizeof(rx_buf_rsp));
+
 		    break;
 
 	    case UART_RX_BUF_RELEASED:
-		    //printk("UART_RX_BUF_RELEASED event \n\r");
 		    break;
 		
 	    case UART_RX_DISABLED: 
@@ -440,11 +451,9 @@ static void uart_cb(const struct device *dev, struct uart_event *evt, void *user
 		    break;
 
 	    case UART_RX_STOPPED:
-		    //printk("UART_RX_STOPPED event \n\r");
 		    break;
 		
 	    default:
-            //printk("UART: unknown event \n\r");
 		    break;
     }
 
