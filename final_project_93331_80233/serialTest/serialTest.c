@@ -92,7 +92,6 @@ int main() {
     int y;
     for (int i = 1; i < 100; i++)
     {
-      srand(time(NULL));
       start = clock();
       char file_name[128];
       sprintf(file_name, "images/img%d.raw", i);
@@ -114,18 +113,6 @@ int main() {
       fread(buffer, 1, WIDTH * HEIGHT, fp);
       // Close the input file
       fclose(fp);
-      memset(buffer, 0, WIDTH * HEIGHT);
-      // Set one random 0xFF byte in a random column of the first row
-      int y = rand() % HEIGHT;
-      buffer[0 * 63 + y] = 0xFF;
-
-      // Set one random 0xFF byte in a random column of the last row
-      y = rand() % HEIGHT;
-      buffer[(WIDTH - 1) * 128 + y] = 0xFF;
-
-      int x =  rand() % HEIGHT;;
-      buffer[127 * 128 + x] = 0x80;
-      buffer[127 * 128 + x + 1] = 0x80;
     
       int ret = write(serial_port, buffer, 128*128);
       end = clock();
@@ -136,7 +123,7 @@ int main() {
         max = elapsed;
         printf("MAX elapsed time: %f seconds\n", max); 
       }
-      usleep(25361);
+      usleep(25381);
     }       
     //MAX elapsed time with image reading: 1322 micro seconds
     //MAX elapsed time without image reading: 252 micro seconds

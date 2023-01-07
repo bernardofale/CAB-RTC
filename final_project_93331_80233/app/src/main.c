@@ -320,83 +320,51 @@ void thread_RXDATA_code(void *argA , void *argB, void *argC){
  Worst case scenario: There is an obstacle in the last position of the CSA upper bound  
  After testing: WCET = 580us */
 void thread_NOD_code(void *argA , void *argB, void *argC){
-	uint32_t start, end, time;
-	uint32_t wc_exec_time = 1;
 	uint8_t *buff;
 
 	while(1){
 		k_sem_take(&sem_NOD, K_FOREVER);
-		start = k_cycle_get_32(); 
 		buff = (uint8_t *) get_mes(cab_RX);
 		flag = nearObstSearch(buff);
 		unget(buff, cab_RX);
-		end = k_cycle_get_32();
-		time = k_cyc_to_us_ceil32(end - start);
-		if(wc_exec_time < time) wc_exec_time = time;
-		//printk("----------------------\nThread NOD executed\nWCET -> %4u\n-----------------\n", wc_exec_time);
 		k_sem_give(&sem_OUTPUT);
-		
 	}
 }
 /* Non-real time task 
-   After testing: WCET = N */
+   After testing: WCET = O(N) */
 void thread_OBSC_code(void *argA , void *argB, void *argC){
-	uint32_t start, end, time;
-	uint32_t wc_exec_time = 1;
 	uint8_t* buff;
 
 	while(1){
 		k_sem_take(&sem_OBSC, K_FOREVER);
-		start = k_cycle_get_32();
 		buff = (uint8_t *) get_mes(cab_RX);
 		obs = obstCount(buff);
 		unget(buff, cab_RX);
-		end = k_cycle_get_32();
-		time = k_cyc_to_us_ceil32(end - start);
-		if(wc_exec_time < time) wc_exec_time = time;
-		//printk("----------------------\nThread OBSC executed\nWCET -> %4u\n-----------------\n", wc_exec_time);
 		k_sem_give(&sem_OUTPUT);
 	}
 	
 }
 /* Soft real-time task, being executed at a second priority level.
  Worst case scenario: The guideline in GN is on the last index of its row, and GF is in the middle of its row
- After testing: WCET = 153us */
+ After testing: WCET = 423us */
 void thread_OAP_code(void *argA , void *argB, void *argC){
-	
-	uint32_t start, end, time;
-	uint32_t wc_exec_time = 1;
 	uint8_t* buff;
 
 	while(1){
 		k_sem_take(&sem_OAP, K_FOREVER);
-		start = k_cycle_get_32();
 		buff = (uint8_t *) get_mes(cab_RX);
 		guideLineSearch(buff, &pos, &angle);
 		unget(buff, cab_RX);
-		end = k_cycle_get_32();
-		time = k_cyc_to_us_ceil32(end - start);
-		if(wc_exec_time < time) wc_exec_time = time;
-		//printk("Angle (Radians): %f\n", angle);
-    	//printk("Position (Percentage): %d%%\n", pos);
-		//printk("-----------------\nThread OAP executed\nWCET -> %4u\n-----------------\n", wc_exec_time);
 		k_sem_give(&sem_OUTPUT);
 	}
 }
 /* Critical to the safety of the robot and should be executed at the highest possible rate. */
-/* WCET = 24781us */
+/* WCET = 25361us */
 void thread_OUTPUT_code(void *argA , void *argB, void *argC){
-	uint32_t start, end, time;
-	uint32_t wc_exec_time = 1;
 
 	while(1){
 		k_sem_take(&sem_OUTPUT, K_FOREVER);
-		start = k_cycle_get_32();
 		printk("Near obstacle detection -> %4u\nOrientation and Position -> %f, %d%%\nNumber of obstacles -> %4u\n", flag, angle, pos, obs);
-		end = k_cycle_get_32();
-		time = k_cyc_to_us_ceil32(end - start);
-		if(wc_exec_time < time) wc_exec_time = time;
-		//printf("-----------------------\nThread OUTPUT executed\nWCET -> %4u\n-----------------", wc_exec_time);
 	}
 }
 
