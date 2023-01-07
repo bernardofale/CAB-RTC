@@ -46,6 +46,6 @@ int main(int argc, char** argv) {
     FILE* fp = fopen(argv[1], "wb");
     fwrite(image, sizeof(unsigned char), WIDTH * HEIGHT, fp);
     fclose(fp);
-    usleep(200000);
+    //usleep(200000);
     return 0;
 }

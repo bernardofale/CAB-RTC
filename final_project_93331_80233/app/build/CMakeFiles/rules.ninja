@@ -614,7 +614,7 @@ rule C_STATIC_LIBRARY_LINKER__img_algo_
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = /usr/local/Cellar/cmake/3.24.2/bin/cmake --regenerate-during-build -S/Users/bernardofalle/Documents/SOTR/app -B/Users/bernardofalle/Documents/SOTR/app/build
+  command = /usr/local/Cellar/cmake/3.24.2/bin/cmake --regenerate-during-build -S/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app -B/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build
   description = Re-running CMake...
   generator = 1
 

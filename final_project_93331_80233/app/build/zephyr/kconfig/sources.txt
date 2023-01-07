@@ -1,6 +1,6 @@
-/Users/bernardofalle/Documents/SOTR/app/build/Kconfig/Kconfig.modules
-/Users/bernardofalle/Documents/SOTR/app/build/Kconfig/Kconfig.shield
-/Users/bernardofalle/Documents/SOTR/app/build/Kconfig/Kconfig.shield.defconfig
+/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/Kconfig/Kconfig.modules
+/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/Kconfig/Kconfig.shield
+/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/Kconfig/Kconfig.shield.defconfig
 /Users/bernardofalle/ncs/modules/debug/TraceRecorder/config/Kconfig
 /Users/bernardofalle/ncs/modules/debug/TraceRecorder/kernelports/Zephyr/Kconfig
 /Users/bernardofalle/ncs/modules/debug/TraceRecorder/streamports/ARM_ITM/Kconfig

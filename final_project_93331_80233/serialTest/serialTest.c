@@ -122,6 +122,10 @@ int main() {
       // Set one random 0xFF byte in a random column of the last row
       y = rand() % HEIGHT;
       buffer[(WIDTH - 1) * 128 + y] = 0xFF;
+
+      int x =  rand() % HEIGHT;;
+      buffer[127 * 128 + x] = 0x80;
+      buffer[127 * 128 + x + 1] = 0x80;
     
       int ret = write(serial_port, buffer, 128*128);
       end = clock();
@@ -132,7 +136,7 @@ int main() {
         max = elapsed;
         printf("MAX elapsed time: %f seconds\n", max); 
       }
-      usleep(1322);
+      usleep(25361);
     }       
     //MAX elapsed time with image reading: 1322 micro seconds
     //MAX elapsed time without image reading: 252 micro seconds

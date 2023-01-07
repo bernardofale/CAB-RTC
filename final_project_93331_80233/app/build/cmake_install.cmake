@@ -1,4 +1,4 @@
-# Install script for directory: /Users/bernardofalle/Documents/SOTR/app
+# Install script for directory: /Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,17 +39,17 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/zephyr/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/zephyr/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/cab/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/cab/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/img_algo/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/img_algo/cmake_install.cmake")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
@@ -60,5 +60,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/Users/bernardofalle/Documents/SOTR/app/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

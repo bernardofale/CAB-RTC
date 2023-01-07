@@ -39,61 +39,61 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/zephyr/drivers/interrupt_controller/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/zephyr/drivers/interrupt_controller/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/zephyr/drivers/misc/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/zephyr/drivers/misc/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/zephyr/drivers/pcie/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/zephyr/drivers/pcie/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/zephyr/drivers/disk/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/zephyr/drivers/disk/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/zephyr/drivers/usb/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/zephyr/drivers/usb/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/zephyr/drivers/usbc/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/zephyr/drivers/usbc/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/zephyr/drivers/clock_control/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/zephyr/drivers/clock_control/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/zephyr/drivers/console/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/zephyr/drivers/console/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/zephyr/drivers/gpio/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/zephyr/drivers/gpio/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/zephyr/drivers/serial/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/zephyr/drivers/serial/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/zephyr/drivers/timer/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/zephyr/drivers/timer/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/bernardofalle/Documents/SOTR/app/build/zephyr/drivers/pinctrl/cmake_install.cmake")
+  include("/Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/build/zephyr/drivers/pinctrl/cmake_install.cmake")
 endif()
 

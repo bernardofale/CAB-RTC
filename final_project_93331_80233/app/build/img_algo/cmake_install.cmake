@@ -1,4 +1,4 @@
-# Install script for directory: /Users/bernardofalle/Documents/SOTR/app/img_algo
+# Install script for directory: /Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/img_algo
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define N_TASKS 4
+#define N_TASKS 3
 
 struct cab;
 typedef struct cab {

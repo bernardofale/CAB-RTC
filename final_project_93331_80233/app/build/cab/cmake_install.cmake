@@ -1,4 +1,4 @@
-# Install script for directory: /Users/bernardofalle/Documents/SOTR/app/cab
+# Install script for directory: /Users/bernardofalle/Documents/SOTR/final_project_93331_80233/app/cab
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
