@@ -1,7 +1,0 @@
-set(IMG_ALGO_SRCS
-   img_algo.h img_algo.c
-)
-# Set the library type (can be static or dynamic )
-SET (LIB_TYPE STATIC)
-# Create the library
-add_library (img_algo ${LIB_TYPE} ${IMG_ALGO_SRCS})
